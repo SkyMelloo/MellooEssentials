@@ -29,5 +29,9 @@
 		"java": ">=25",
 		"fabric-api": "*",
 		"hypixel-mod-api": "*"
+	},
+	"custom": {
+		"mellooessentials:publicVersion": "${publicVersion}",
+		"mellooessentials:buildType": "${buildType}"
 	}
 }

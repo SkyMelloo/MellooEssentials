@@ -74,8 +74,8 @@ public final class EssentialsConfig {
 	public boolean playerInfoHudEnabled = false;
 
 	// ---- Cosmetics ----
-	// Same effect set/defaults as sky.melloo.ch's CosmeticsRenderer. Visible to other Hypixel
-	// Essentials (or sky.melloo.ch) users nearby - presence sync is always on, see PresenceManager.
+	// Same effect set/defaults as SkyMelloo's CosmeticsRenderer. Visible to other Hypixel
+	// Essentials (or SkyMelloo) users nearby - presence sync is always on, see PresenceManager.
 
 	public boolean cosmeticsEnabled = true;
 

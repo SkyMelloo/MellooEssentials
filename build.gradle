@@ -35,15 +35,24 @@ dependencies {
 
 	// Party detection via Hypixel's official Mod API - the actual networking bridge is provided at
 	// runtime by the separately-installed HypixelModAPI mod; only the packet/API classes are needed
-	// here (same as sky.melloo.ch).
+	// here (same as SkyMelloo).
 	implementation "net.hypixel:mod-api:${project.hypixel_modapi_version}"
 }
 
+// Own build type/signing/registration pipeline, mirroring SkyMelloo's build.gradle exactly but
+// against MellooEssentials' own key/token/endpoint (~/.mellooessentials-signing/, /api/mod/mellooessentials/*)
+// - deliberately independent, not shared with skymelloo's pipeline. Declared before processResources
+// below since that block reads it directly.
+def buildType = project.hasProperty('testBuild') ? 'test' : 'dev'
+
 processResources {
 	def version = project.version
+	def publicVersion = project.public_version
 	inputs.property "version", version
+	inputs.property "publicVersion", publicVersion
+	inputs.property "buildType", buildType
 	filesMatching("fabric.mod.json") {
-		expand "version": version
+		expand "version": version, "publicVersion": publicVersion, "buildType": buildType
 	}
 }
 
@@ -56,11 +65,6 @@ java {
 	sourceCompatibility = JavaVersion.VERSION_25
 	targetCompatibility = JavaVersion.VERSION_25
 }
-
-// Own build type/signing/registration pipeline, mirroring sky.melloo.ch's build.gradle exactly but
-// against MellooEssentials' own key/token/endpoint (~/.mellooessentials-signing/, /api/mod/mellooessentials/*)
-// - deliberately independent, not shared with skymelloo's pipeline.
-def buildType = project.hasProperty('testBuild') ? 'test' : 'dev'
 
 def resolveChangelogText = {
 	if (project.hasProperty('changelogFile')) {

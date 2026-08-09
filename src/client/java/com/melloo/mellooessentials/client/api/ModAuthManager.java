@@ -24,7 +24,7 @@ import java.util.concurrent.CompletionException;
 
 /**
  * Proves to sky.melloo.me that a request genuinely comes from a live, logged-in Minecraft client
- * for a specific account, via the exact same joinServer/hasJoined handshake sky.melloo.ch's
+ * for a specific account, via the exact same joinServer/hasJoined handshake SkyMelloo's
  * ModAuthManager uses - only proves "a real Mojang account is behind this", nothing tied to a
  * Discord/website account, so this needs no login/account system of its own at all. A fresh
  * in-memory-only Ed25519 keypair proves every subsequent request instead of a reusable secret.

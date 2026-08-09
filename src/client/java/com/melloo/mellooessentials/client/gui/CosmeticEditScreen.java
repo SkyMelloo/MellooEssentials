@@ -18,7 +18,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * Centered per-cosmetic edit popup (same bordered-card style as sky.melloo.ch's StringInputScreen).
+ * Centered per-cosmetic edit popup (same bordered-card style as SkyMelloo's StringInputScreen).
  * Every cosmetic gets an enabled toggle and a "hide my own particles" toggle. A cosmetic that's
  * color-capable ALSO gets a particle-kind cycle whose first entry is "Default (Color)" - picking it
  * shows the 16-standard-Minecraft-color grid below and renders as colored dust; picking any named

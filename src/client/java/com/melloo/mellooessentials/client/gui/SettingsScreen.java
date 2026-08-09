@@ -16,7 +16,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
- * Centered, tabbed popup card (same bordered-panel style as sky.melloo.ch's StringInputScreen).
+ * Centered, tabbed popup card (same bordered-panel style as SkyMelloo's StringInputScreen).
  * Clicking a cosmetic that actually has options (a color OR a particle choice - never both, see
  * CosmeticEditScreen's own doc comment on why) opens {@link CosmeticEditScreen} for it; one with
  * neither just toggles directly in place.
@@ -472,7 +472,7 @@ public class SettingsScreen extends Screen {
 		}
 	}
 
-	/** Same flat accent-tinted button style as sky.melloo.ch's StringInputScreen popup. */
+	/** Same flat accent-tinted button style as SkyMelloo's StringInputScreen popup. */
 	static final class StyledButton extends AbstractWidget {
 		private final int accentColor;
 		private final Runnable onClick;

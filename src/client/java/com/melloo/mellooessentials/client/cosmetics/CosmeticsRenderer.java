@@ -19,7 +19,7 @@ import java.util.UUID;
 /**
  * Purely cosmetic, client-side-only particle effects (no gameplay impact to Hypixel). Off by
  * default, toggled per-effect in the settings screen. Also renders these same effects around
- * OTHER nearby players also running MellooEssentials (or sky.melloo.ch), detected via
+ * OTHER nearby players also running MellooEssentials (or SkyMelloo), detected via
  * {@link PresenceManager} - opt-in (presenceSharingEnabled), no account/login needed at all.
  */
 public final class CosmeticsRenderer {

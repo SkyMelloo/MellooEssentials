@@ -18,7 +18,7 @@ import java.util.function.BiFunction;
  * prefix, as far to the front as the component structure allows) - a real item icon, not a colored
  * unicode glyph stand-in, using the same inline sprite text-component support
  * ({@code ObjectContents}/{@code AtlasSprite}) this game version added. Moved here from
- * sky.melloo.ch's original AccountLinkedMarkerManager, generalized to take the sprite as a
+ * SkyMelloo's original AccountLinkedMarkerManager, generalized to take the sprite as a
  * parameter, and driven through this mod's own mixins only (nametag: {@code EntityDisplayNameMixin};
  * tab list: {@code PlayerTabOverlayMixin}) so only one marker ever gets added per player per
  * surface - never two mixins each independently prepending their own icon, which would stack

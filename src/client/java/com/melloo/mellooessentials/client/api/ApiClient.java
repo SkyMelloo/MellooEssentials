@@ -81,7 +81,7 @@ public final class ApiClient {
 				});
 	}
 
-	/** A single one-second retry on a plain timeout - see sky.melloo.ch's SkyMellooApiClient, same reasoning. */
+	/** A single one-second retry on a plain timeout - see SkyMelloo's SkyMellooApiClient, same reasoning. */
 	private static CompletableFuture<HttpResponse<String>> sendWithRetry(HttpRequest request) {
 		return HTTP.sendAsync(request, HttpResponse.BodyHandlers.ofString())
 				.handle((response, error) -> {

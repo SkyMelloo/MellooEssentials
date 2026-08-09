@@ -21,7 +21,7 @@ import java.util.UUID;
  */
 public final class HighlightManager {
 	// The same accent blue used for every bordered popup panel across both this mod (SettingsScreen,
-	// CosmeticEditScreen, BulkCosmeticScreen) and sky.melloo.ch's own screens (StringInputScreen,
+	// CosmeticEditScreen, BulkCosmeticScreen) and SkyMelloo's own screens (StringInputScreen,
 	// HudLayoutEditorScreen, etc.) - one consistent "light blue" across the whole SkyMelloo family,
 	// not a separate shade invented just for this.
 	private static final int PARTY_COLOR = 0xFF66DDFF;

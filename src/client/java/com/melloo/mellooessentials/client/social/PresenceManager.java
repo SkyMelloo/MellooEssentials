@@ -76,7 +76,7 @@ public final class PresenceManager {
 		if (queryInFlight) {
 			return;
 		}
-		// Deliberately INCLUDES the local player's own UUID (unlike sky.melloo.ch's ModPresenceManager,
+		// Deliberately INCLUDES the local player's own UUID (unlike SkyMelloo's ModPresenceManager,
 		// which only ever needs to know about others) - otherRoles/isStaff would otherwise never
 		// resolve for yourself at all, since nothing else here ever asks the server "what's MY role".
 		// You're trivially always a member of your own party, so without this, a staff player looking
@@ -175,7 +175,7 @@ public final class PresenceManager {
 		return kinds == null ? null : kinds.get(effectKey);
 	}
 
-	/** Any sky.melloo.me team role at all ("owner"/"admin"/"developer"/"moderator") - all of them get the fixed staff/contributor pink highlight here, not just owner/admin/developer like sky.melloo.ch's own narrower distinction. */
+	/** Any sky.melloo.me team role at all ("owner"/"admin"/"developer"/"moderator") - all of them get the fixed staff/contributor pink highlight here, not just owner/admin/developer like SkyMelloo's own narrower distinction. */
 	public static boolean isStaff(UUID uuid) {
 		return otherRoles.get(uuid) != null;
 	}

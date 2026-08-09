@@ -116,7 +116,7 @@ public final class PlayerInfoHud implements HudElement {
 
 		List<String> lines = buildLines(client);
 
-		// Fixed top-left position - no drag-to-reposition HUD editor here, unlike sky.melloo.ch.
+		// Fixed top-left position - no drag-to-reposition HUD editor here, unlike SkyMelloo.
 		int x = 6;
 		int y = 6;
 		int width = 8;
