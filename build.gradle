@@ -1,0 +1,143 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+	archivesName = project.archives_base_name
+}
+
+repositories {
+	mavenCentral()
+	maven {
+		name = 'Hypixel'
+		url = 'https://repo.hypixel.net/repository/Hypixel/'
+	}
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"mellooessentials" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Party detection via Hypixel's official Mod API - the actual networking bridge is provided at
+	// runtime by the separately-installed HypixelModAPI mod; only the packet/API classes are needed
+	// here (same as sky.melloo.ch).
+	implementation "net.hypixel:mod-api:${project.hypixel_modapi_version}"
+}
+
+processResources {
+	def version = project.version
+	inputs.property "version", version
+	filesMatching("fabric.mod.json") {
+		expand "version": version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+java {
+	withSourcesJar()
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+// Own build type/signing/registration pipeline, mirroring sky.melloo.ch's build.gradle exactly but
+// against MellooEssentials' own key/token/endpoint (~/.mellooessentials-signing/, /api/mod/mellooessentials/*)
+// - deliberately independent, not shared with skymelloo's pipeline.
+def buildType = project.hasProperty('testBuild') ? 'test' : 'dev'
+
+def resolveChangelogText = {
+	if (project.hasProperty('changelogFile')) {
+		return new File(project.property('changelogFile').toString()).text
+	}
+	return project.findProperty('changelog')
+}
+
+tasks.register('requireSigningKeyForDevBuild') {
+	group = 'mellooessentials'
+	description = 'Fails the build if attempting a "dev" build (no -PtestBuild) without the maintainer\'s own signing key present.'
+	doLast {
+		if (project.hasProperty('testBuild')) {
+			return
+		}
+		def keyFile = new File(System.getProperty("user.home"), ".mellooessentials-signing/private_key.pem")
+		if (!keyFile.exists()) {
+			throw new GradleException(
+				"Can't build \"dev\" - that requires the maintainer's own signing key, which isn't on this " +
+				"machine. Add -PtestBuild instead (e.g. ./gradlew build -PtestBuild=true, or node scripts/build.js) - " +
+				"a test build needs no key or verification at all."
+			)
+		}
+	}
+}
+
+tasks.register('requireChangelog') {
+	group = 'mellooessentials'
+	description = 'Fails the build if no changelog was provided via -Pchangelog or -PchangelogFile (skipped entirely for -PtestBuild builds).'
+	dependsOn tasks.named('requireSigningKeyForDevBuild')
+	doLast {
+		if (project.hasProperty('testBuild')) {
+			return
+		}
+		def text = resolveChangelogText()
+		if (!text || text.toString().trim().isEmpty()) {
+			throw new GradleException(
+				"Missing changelog! Every build must include one now - run with " +
+				"-PchangelogFile=path/to/changelog.txt (recommended) or -Pchangelog=\"short one-liner\"."
+			)
+		}
+	}
+}
+
+tasks.register('signAndRegisterBuild', Exec) {
+	group = 'mellooessentials'
+	description = 'Signs this build\'s own class hash with the local private key and registers it as a trusted release, with its changelog (never fails the build over network/IO issues, but requires -Pchangelog). Skipped entirely for -PtestBuild builds.'
+	dependsOn tasks.named('jar'), tasks.named('requireChangelog')
+	ignoreExitValue = true
+	onlyIf { !project.hasProperty('testBuild') }
+	doFirst {
+		def text = resolveChangelogText()
+		def tmpFile = new File("${buildDir}/changelog-arg.txt")
+		tmpFile.parentFile.mkdirs()
+		tmpFile.text = text.toString()
+		commandLine 'java', "${projectDir}/scripts/SignAndRegister.java", project.version.toString(), tasks.named('jar').get().archiveFile.get().asFile.absolutePath, tmpFile.absolutePath
+	}
+}
+
+tasks.register('reportBuild', Exec) {
+	group = 'mellooessentials'
+	description = 'Reports this build\'s version + jar hash to sky.melloo.me (informational, never fails the build).'
+	dependsOn tasks.named('jar')
+	ignoreExitValue = true
+	commandLine 'node', "${projectDir}/scripts/report-build.js", project.version.toString(), tasks.named('jar').get().archiveFile.get().asFile.absolutePath
+}
+
+tasks.register('uploadJar', Exec) {
+	group = 'mellooessentials'
+	description = 'Uploads this build\'s jar to sky.melloo.me for admin download (never fails the build).'
+	dependsOn tasks.named('jar')
+	ignoreExitValue = true
+	commandLine 'node', "${projectDir}/scripts/upload-jar.js", project.version.toString(), tasks.named('jar').get().archiveFile.get().asFile.absolutePath
+}
+
+tasks.named('build') {
+	finalizedBy tasks.named('reportBuild')
+	finalizedBy tasks.named('signAndRegisterBuild')
+	finalizedBy tasks.named('uploadJar')
+}

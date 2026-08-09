@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "com.melloo.mellooessentials.client.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"EntityGlowMixin",
+		"EntityDisplayNameMixin",
+		"SetTimePacketMixin",
+		"PlayerTabOverlayMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

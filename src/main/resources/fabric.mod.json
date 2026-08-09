@@ -1,0 +1,33 @@
+{
+	"schemaVersion": 1,
+	"id": "mellooessentials",
+	"version": "${version}",
+	"name": "MellooEssentials",
+	"description": "A lightweight Hypixel companion mod: party and team member highlighting, plus purely cosmetic particle effects. No account or login required. Paired with sky.melloo.me - also the shared core SkyMelloo builds on.",
+	"authors": [
+		"hexedmaya"
+	],
+	"contact": {
+		"homepage": "https://sky.melloo.me/mellooessentials"
+	},
+	"license": "AGPL-3.0-or-later",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"com.melloo.mellooessentials.client.MellooEssentialsClient"
+		]
+	},
+	"mixins": [
+		{
+			"config": "mellooessentials.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.3",
+		"minecraft": "~26.1.2",
+		"java": ">=25",
+		"fabric-api": "*",
+		"hypixel-mod-api": "*"
+	}
+}

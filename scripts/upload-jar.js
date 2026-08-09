@@ -1,0 +1,66 @@
+#!/usr/bin/env node
+// MellooEssentials' own copy of skymelloo's upload-jar.js - deliberately independent (own token
+// file, own endpoint). Uploads this build's actual jar file to sky.melloo.me right after every
+// build, so a Dev build (already passing the integrity check, just not a public release) has a jar
+// sitting on the server for the admin to grab and test without a manual step every time.
+//
+// Never fails the build itself - a network hiccup or missing token file here is logged and
+// swallowed, not fatal.
+const fs = require('fs');
+const https = require('https');
+const os = require('os');
+const path = require('path');
+
+const [, , version, jarPath] = process.argv;
+if (!version || !jarPath) {
+  console.error('Usage: node upload-jar.js <version> <path-to-jar>');
+  process.exit(0);
+}
+
+const TOKEN_FILE = path.join(os.homedir(), '.mellooessentials-signing', 'build_report_token.txt');
+
+let token;
+try {
+  token = fs.readFileSync(TOKEN_FILE, 'utf8').trim();
+} catch {
+  console.warn(`[upload-jar] No token file at ${TOKEN_FILE} - skipping jar upload (non-fatal).`);
+  process.exit(0);
+}
+
+let jarBytes;
+try {
+  jarBytes = fs.readFileSync(jarPath);
+} catch (e) {
+  console.warn(`[upload-jar] Could not read jar at ${jarPath} - skipping jar upload (non-fatal): ${e.message}`);
+  process.exit(0);
+}
+
+const req = https.request(
+  `https://sky.melloo.me/api/mod/mellooessentials/releases/${encodeURIComponent(version)}/jar`,
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/java-archive',
+      'Content-Length': jarBytes.length,
+      'X-Build-Report-Token': token,
+    },
+  },
+  (res) => {
+    let data = '';
+    res.on('data', (chunk) => {
+      data += chunk;
+    });
+    res.on('end', () => {
+      if (res.statusCode === 200) {
+        console.log(`[upload-jar] Uploaded ${version}'s jar (${jarBytes.length} bytes) to sky.melloo.me.`);
+      } else {
+        console.warn(`[upload-jar] Server rejected the upload (${res.statusCode}): ${data}`);
+      }
+    });
+  }
+);
+req.on('error', (err) => {
+  console.warn(`[upload-jar] Request failed (non-fatal): ${err.message}`);
+});
+req.write(jarBytes);
+req.end();
