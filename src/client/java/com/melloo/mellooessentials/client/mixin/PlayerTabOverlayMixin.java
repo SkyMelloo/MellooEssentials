@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Mixin(PlayerTabOverlay.class)
 public abstract class PlayerTabOverlayMixin {
 	private static final Identifier LIGHT_BLUE_DYE_SPRITE = Identifier.withDefaultNamespace("item/light_blue_dye");
+	private static final Identifier PINK_DYE_SPRITE = Identifier.withDefaultNamespace("item/pink_dye");
 	private static final Logger LOGGER = LoggerFactory.getLogger("MellooEssentials/PlayerTabOverlayMixin");
 
 	// Diagnostic only, added to chase a live report that the marker doesn't show in the tab list on
@@ -45,7 +46,8 @@ public abstract class PlayerTabOverlayMixin {
 		Component colorized = HighlightManager.colorizeTabListName(uuid, cir.getReturnValue());
 		boolean isModUser = ModMarkerManager.isModUser(uuid);
 		if (isModUser) {
-			colorized = ModMarkerManager.apply(uuid, colorized, LIGHT_BLUE_DYE_SPRITE);
+			Identifier sprite = PresenceManager.isSkyMelloo(uuid) ? PINK_DYE_SPRITE : LIGHT_BLUE_DYE_SPRITE;
+			colorized = ModMarkerManager.apply(uuid, colorized, sprite);
 		}
 		maybeLog(uuid, isModUser);
 		cir.setReturnValue(colorized);
@@ -58,7 +60,7 @@ public abstract class PlayerTabOverlayMixin {
 			return;
 		}
 		lastLoggedAt.put(uuid, now);
-		LOGGER.info("tab-list mixin fired for {} - isModUser={}, isStaff={}, markerApplied={}",
-				uuid, PresenceManager.isModUser(uuid), PresenceManager.isStaff(uuid), markerApplied);
+		LOGGER.info("tab-list mixin fired for {} - isModUser={}, isSkyMelloo={}, isStaff={}, markerApplied={}",
+				uuid, PresenceManager.isModUser(uuid), PresenceManager.isSkyMelloo(uuid), PresenceManager.isStaff(uuid), markerApplied);
 	}
 }

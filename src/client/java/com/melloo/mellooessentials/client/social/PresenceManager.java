@@ -10,8 +10,10 @@ import org.slf4j.LoggerFactory;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -36,6 +38,11 @@ public final class PresenceManager {
 	private static final Map<UUID, Map<String, Integer>> otherCosmetics = new ConcurrentHashMap<>();
 	private static final Map<UUID, Map<String, String>> otherParticleKinds = new ConcurrentHashMap<>();
 	private static final Map<UUID, String> otherRoles = new ConcurrentHashMap<>();
+	// Which presence entries also reported via SkyMelloo's own client recently (server-resolved from
+	// the report's client header, see ApiClient.PresenceEntry's doc comment) - this, not generic
+	// isModUser (true for ANY mod, since both mods share the same /presence endpoint), is the real
+	// signal for the mod-user marker's pink-vs-light-blue choice. Absent from this set = light blue.
+	private static final Set<UUID> otherIsSkyMelloo = ConcurrentHashMap.newKeySet();
 
 	private PresenceManager() {
 	}
@@ -102,6 +109,7 @@ public final class PresenceManager {
 					Map<UUID, Map<String, Integer>> updatedCosmetics = new HashMap<>();
 					Map<UUID, Map<String, String>> updatedParticleKinds = new HashMap<>();
 					Map<UUID, String> updatedRoles = new HashMap<>();
+					Set<UUID> updatedIsSkyMelloo = new HashSet<>();
 					for (ApiClient.PresenceEntry entry : present) {
 						UUID uuid;
 						try {
@@ -137,6 +145,9 @@ public final class PresenceManager {
 						if (entry.role() != null) {
 							updatedRoles.put(uuid, entry.role());
 						}
+						if (entry.skymelloo()) {
+							updatedIsSkyMelloo.add(uuid);
+						}
 					}
 					otherCosmetics.clear();
 					otherCosmetics.putAll(updatedCosmetics);
@@ -144,11 +155,18 @@ public final class PresenceManager {
 					otherParticleKinds.putAll(updatedParticleKinds);
 					otherRoles.clear();
 					otherRoles.putAll(updatedRoles);
+					otherIsSkyMelloo.clear();
+					otherIsSkyMelloo.addAll(updatedIsSkyMelloo);
 				});
 	}
 
 	public static boolean isModUser(UUID uuid) {
 		return otherCosmetics.containsKey(uuid);
+	}
+
+	/** True only if this uuid has ALSO reported presence via SkyMelloo's own client recently, not just MellooEssentials' - see the mod-user marker's pink-vs-light-blue choice in EntityDisplayNameMixin/PlayerTabOverlayMixin. isModUser alone can't answer this: it's true for anyone running either mod, since both report to the same /presence endpoint. */
+	public static boolean isSkyMelloo(UUID uuid) {
+		return otherIsSkyMelloo.contains(uuid);
 	}
 
 	public static boolean hasCosmetic(UUID uuid, String effectKey) {

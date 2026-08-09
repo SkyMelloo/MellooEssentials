@@ -11,7 +11,6 @@ import net.minecraft.resources.Identifier;
 
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.BiFunction;
 
 /**
  * Prepends a small dye-sprite marker in front of a player's ENTIRE name (before any Hypixel rank
@@ -29,36 +28,26 @@ import java.util.function.BiFunction;
  * no guaranteed {@code Player} object to key off for that surface, only a {@link UUID} from the
  * tab-list entry's game profile.
  * <p>
- * {@link #spriteOverride} is the extension point that makes the two-tier light-blue/pink behavior
- * possible without this mod knowing SkyMelloo exists: SkyMelloo (which depends on this mod, never
- * the other way around) registers a resolver via {@link #setSpriteOverride} at startup that returns
- * a different sprite for players it separately confirms are SkyMelloo users, or {@code null} to
- * leave this mod's own default untouched. No forced text color on either the sprite or its
- * connecting space - both use an explicit but colorless style ({@link Style#EMPTY}) purely to block
- * an earlier rank/name color code from bleeding onto the dye's own natural texture color.
+ * The pink-vs-light-blue choice itself is NOT decided here (previously a SkyMelloo-registered
+ * override resolver lived in this class - removed, see git history if needed): both mods report
+ * presence to the exact same {@code /presence} endpoint, so a UUID being "a mod user" was already
+ * true for anyone running EITHER mod - the override could only ever see the LOCAL client's own
+ * SkyMelloo presence data, not the server's, so a MellooEssentials-only player always looked pink
+ * from a SkyMelloo client, and a real SkyMelloo user always looked light-blue from an Essentials-only
+ * client. Callers now pass the already-decided sprite directly (see
+ * {@link PresenceManager#isSkyMelloo}, server-resolved per UUID from which mod's client header showed
+ * up on that UUID's most recent presence report - correct symmetrically from either mod's client).
+ * No forced text color on either the sprite or its connecting space - both use an explicit but
+ * colorless style ({@link Style#EMPTY}) purely to block an earlier rank/name color code from bleeding
+ * onto the dye's own natural texture color.
  */
 public final class ModMarkerManager {
 	private static final String FALLBACK_GLYPH = "❖"; // used only if the sprite itself can't resolve
 
-	private static volatile BiFunction<UUID, Identifier, Identifier> spriteOverride = null;
-
 	private ModMarkerManager() {
 	}
 
-	/** Registers a resolver that can swap out the sprite this mod would otherwise use for a given player - passed their UUID and this mod's own default sprite, returns a replacement or {@code null} to leave the default as-is. Only one resolver is ever active at a time (setting a new one replaces the last). */
-	public static void setSpriteOverride(BiFunction<UUID, Identifier, Identifier> resolver) {
-		spriteOverride = resolver;
-	}
-
-	public static Component apply(UUID uuid, Component original, Identifier defaultSpriteId) {
-		Identifier spriteId = defaultSpriteId;
-		BiFunction<UUID, Identifier, Identifier> override = spriteOverride;
-		if (override != null) {
-			Identifier resolved = override.apply(uuid, defaultSpriteId);
-			if (resolved != null) {
-				spriteId = resolved;
-			}
-		}
+	public static Component apply(UUID uuid, Component original, Identifier spriteId) {
 		MutableComponent fallback = Component.literal(FALLBACK_GLYPH).setStyle(Style.EMPTY);
 		MutableComponent icon = MutableComponent.create(new ObjectContents(new AtlasSprite(AtlasIds.ITEMS, spriteId), Optional.of(fallback)));
 		icon.setStyle(Style.EMPTY);
