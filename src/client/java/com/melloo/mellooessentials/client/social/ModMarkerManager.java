@@ -62,7 +62,10 @@ public final class ModMarkerManager {
 		MutableComponent fallback = Component.literal(FALLBACK_GLYPH).setStyle(Style.EMPTY);
 		MutableComponent icon = MutableComponent.create(new ObjectContents(new AtlasSprite(AtlasIds.ITEMS, spriteId), Optional.of(fallback)));
 		icon.setStyle(Style.EMPTY);
-		return icon.append(original);
+		// A thin space (U+2009), not a regular one - narrower gap than the original design, but the
+		// name sitting flush against the icon with no gap at all read as a little too tight.
+		MutableComponent spacer = Component.literal(" ").setStyle(Style.EMPTY);
+		return icon.append(spacer).append(original);
 	}
 
 	/** Whether {@code uuid} should get a marker at all - true for the local player, or anyone {@link PresenceManager} has detected reporting presence. */

@@ -62,6 +62,14 @@ public class SettingsScreen extends Screen {
 		this.parent = parent;
 	}
 
+	/** Opens straight to the Cosmetics tab instead of General - used by SkyMelloo's own menu, which links here directly instead of maintaining a second, duplicate cosmetics UI of its own. */
+	public SettingsScreen(Screen parent, boolean openToCosmetics) {
+		this(parent);
+		if (openToCosmetics) {
+			currentTab = Tab.COSMETICS;
+		}
+	}
+
 	private int panelWidth() {
 		return Math.min(PANEL_MAX_WIDTH, this.width - 40);
 	}
