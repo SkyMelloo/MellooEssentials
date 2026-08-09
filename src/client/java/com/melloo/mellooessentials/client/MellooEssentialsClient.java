@@ -3,6 +3,7 @@ package com.melloo.mellooessentials.client;
 import com.melloo.mellooessentials.client.api.ApiClient;
 import com.melloo.mellooessentials.client.api.ModAuthManager;
 import com.melloo.mellooessentials.client.cosmetics.CosmeticsRenderer;
+import com.melloo.mellooessentials.client.gui.HudLayoutEditorScreen;
 import com.melloo.mellooessentials.client.gui.PlayerInfoHud;
 import com.melloo.mellooessentials.client.gui.SettingsScreen;
 import com.melloo.mellooessentials.client.gui.SocialMenuScreen;
@@ -39,6 +40,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 
 	private static KeyMapping openSettingsKey;
 	private static KeyMapping socialMenuKey;
+	private static KeyMapping hudLayoutKey;
 
 	@Override
 	public void onInitializeClient() {
@@ -56,6 +58,17 @@ public class MellooEssentialsClient implements ClientModInitializer {
 				"key.mellooessentials.social_menu",
 				InputConstants.Type.KEYSYM,
 				GLFW.GLFW_KEY_G,
+				CATEGORY
+		));
+
+		// Moved here from SkyMelloo - this mod owns the HUD layout editor unconditionally now (same
+		// "always bind, don't defer" pattern as G/H above), natively covering only the two HUD
+		// elements this mod actually renders. SkyMelloo hooks its own extra elements in via
+		// HudLayoutEditorScreen.setExtraElementsProvider when it's installed - see its own doc comment.
+		hudLayoutKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+				"key.mellooessentials.hud_layout",
+				InputConstants.Type.KEYSYM,
+				GLFW.GLFW_KEY_J,
 				CATEGORY
 		));
 
@@ -78,6 +91,11 @@ public class MellooEssentialsClient implements ClientModInitializer {
 			while (socialMenuKey.consumeClick()) {
 				if (client.screen == null) {
 					client.setScreen(new SocialMenuScreen());
+				}
+			}
+			while (hudLayoutKey.consumeClick()) {
+				if (client.screen == null) {
+					client.setScreen(new HudLayoutEditorScreen());
 				}
 			}
 
