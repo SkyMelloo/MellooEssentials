@@ -29,8 +29,8 @@ public abstract class EntityDisplayNameMixin {
 		Entity self = (Entity) (Object) this;
 		if (self instanceof Player player) {
 			Component colorized = HighlightManager.colorizeName(player, cir.getReturnValue());
-			if (ModMarkerManager.isModUser(player)) {
-				colorized = ModMarkerManager.apply(player, colorized, LIGHT_BLUE_DYE_SPRITE);
+			if (ModMarkerManager.isModUser(player.getUUID())) {
+				colorized = ModMarkerManager.apply(player.getUUID(), colorized, LIGHT_BLUE_DYE_SPRITE);
 			}
 			cir.setReturnValue(colorized);
 		}

@@ -8,9 +8,9 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.contents.ObjectContents;
 import net.minecraft.network.chat.contents.objects.AtlasSprite;
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.player.Player;
 
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.BiFunction;
 
 /**
@@ -19,9 +19,15 @@ import java.util.function.BiFunction;
  * unicode glyph stand-in, using the same inline sprite text-component support
  * ({@code ObjectContents}/{@code AtlasSprite}) this game version added. Moved here from
  * sky.melloo.ch's original AccountLinkedMarkerManager, generalized to take the sprite as a
- * parameter, and driven through a single mixin (this mod's own {@code EntityDisplayNameMixin}) so
- * only one marker ever gets added per player - never two mixins each independently prepending their
- * own icon, which would stack rather than override.
+ * parameter, and driven through this mod's own mixins only (nametag: {@code EntityDisplayNameMixin};
+ * tab list: {@code PlayerTabOverlayMixin}) so only one marker ever gets added per player per
+ * surface - never two mixins each independently prepending their own icon, which would stack
+ * rather than override.
+ * <p>
+ * Keyed by {@link UUID}, not a loaded {@code Player} entity - the tab list can show players who
+ * aren't even in render distance (see {@code PlayerTabOverlayMixin}'s own doc comment), so there's
+ * no guaranteed {@code Player} object to key off for that surface, only a {@link UUID} from the
+ * tab-list entry's game profile.
  * <p>
  * {@link #spriteOverride} is the extension point that makes the two-tier light-blue/pink behavior
  * possible without this mod knowing SkyMelloo exists: SkyMelloo (which depends on this mod, never
@@ -34,21 +40,21 @@ import java.util.function.BiFunction;
 public final class ModMarkerManager {
 	private static final String FALLBACK_GLYPH = "❖"; // used only if the sprite itself can't resolve
 
-	private static volatile BiFunction<Player, Identifier, Identifier> spriteOverride = null;
+	private static volatile BiFunction<UUID, Identifier, Identifier> spriteOverride = null;
 
 	private ModMarkerManager() {
 	}
 
-	/** Registers a resolver that can swap out the sprite this mod would otherwise use for a given player - passed the player and this mod's own default sprite, returns a replacement or {@code null} to leave the default as-is. Only one resolver is ever active at a time (setting a new one replaces the last). */
-	public static void setSpriteOverride(BiFunction<Player, Identifier, Identifier> resolver) {
+	/** Registers a resolver that can swap out the sprite this mod would otherwise use for a given player - passed their UUID and this mod's own default sprite, returns a replacement or {@code null} to leave the default as-is. Only one resolver is ever active at a time (setting a new one replaces the last). */
+	public static void setSpriteOverride(BiFunction<UUID, Identifier, Identifier> resolver) {
 		spriteOverride = resolver;
 	}
 
-	public static Component apply(Player player, Component original, Identifier defaultSpriteId) {
+	public static Component apply(UUID uuid, Component original, Identifier defaultSpriteId) {
 		Identifier spriteId = defaultSpriteId;
-		BiFunction<Player, Identifier, Identifier> override = spriteOverride;
+		BiFunction<UUID, Identifier, Identifier> override = spriteOverride;
 		if (override != null) {
-			Identifier resolved = override.apply(player, defaultSpriteId);
+			Identifier resolved = override.apply(uuid, defaultSpriteId);
 			if (resolved != null) {
 				spriteId = resolved;
 			}
@@ -60,8 +66,9 @@ public final class ModMarkerManager {
 		return icon.append(spacer).append(original);
 	}
 
-	/** Whether {@code player} should get a marker at all - true for the local player, or anyone {@link PresenceManager} has detected reporting presence. */
-	public static boolean isModUser(Player player) {
-		return player == Minecraft.getInstance().player || PresenceManager.isModUser(player.getUUID());
+	/** Whether {@code uuid} should get a marker at all - true for the local player, or anyone {@link PresenceManager} has detected reporting presence. */
+	public static boolean isModUser(UUID uuid) {
+		var local = Minecraft.getInstance().player;
+		return (local != null && local.getUUID().equals(uuid)) || PresenceManager.isModUser(uuid);
 	}
 }
