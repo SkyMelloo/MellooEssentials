@@ -28,8 +28,7 @@
 		"minecraft": "~26.1.2",
 		"java": ">=25",
 		"fabric-api": "*",
-		"hypixel-mod-api": "*",
-		"skyblocker": "*"
+		"hypixel-mod-api": "*"
 	},
 	"custom": {
 		"mellooessentials:publicVersion": "${publicVersion}",

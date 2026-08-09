@@ -177,16 +177,30 @@ public class MellooEssentialsClient implements ClientModInitializer {
 		return days + " day" + (days == 1 ? "" : "s");
 	}
 
+	/**
+	 * Online players (real ones - Hypixel NPCs, whose names all start with "!", are filtered out, and
+	 * so is the local player's own name) PLUS the last 10 usernames actually typed into a friend/chat
+	 * command ({@link com.melloo.mellooessentials.client.social.RecentUsernames}), merged and
+	 * deduplicated - so someone who just logged off (or an NPC-free retype of a name you used a
+	 * minute ago) is still one tab-complete away instead of needing the exact spelling again.
+	 */
 	public static java.util.concurrent.CompletableFuture<com.mojang.brigadier.suggestion.Suggestions> suggestOnlinePlayers(
 			com.mojang.brigadier.context.CommandContext<net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource> ctx,
 			com.mojang.brigadier.suggestion.SuggestionsBuilder builder) {
 		Minecraft client = Minecraft.getInstance();
-		if (client.getConnection() == null) {
+		if (client.getConnection() == null || client.player == null) {
 			return builder.buildFuture();
 		}
-		return SharedSuggestionProvider.suggest(
-				client.getConnection().getOnlinePlayers().stream().map(info -> info.getProfile().name()),
-				builder);
+		String selfName = client.player.getGameProfile().name();
+		java.util.LinkedHashSet<String> names = new java.util.LinkedHashSet<>();
+		for (var info : client.getConnection().getOnlinePlayers()) {
+			String name = info.getProfile().name();
+			if (!name.startsWith("!") && !name.equalsIgnoreCase(selfName)) {
+				names.add(name);
+			}
+		}
+		names.addAll(com.melloo.mellooessentials.client.social.RecentUsernames.get());
+		return SharedSuggestionProvider.suggest(names.stream(), builder);
 	}
 
 	public static KeyMapping getOpenSettingsKey() {

@@ -94,6 +94,7 @@ public final class RelayChatManager {
 			client.player.sendSystemMessage(ChatUtil.prefixed("§cNot a friend yet - §f/me friend " + toUsername + " §cfirst."));
 			return;
 		}
+		RecentUsernames.record(toUsername);
 		ModAuthManager.getIdentity(client)
 				.thenCompose(identity -> ApiClient.sendRelayMessage(toUsername, text, identity))
 				.whenComplete((ok, error) -> Minecraft.getInstance().execute(() -> {
@@ -182,6 +183,7 @@ public final class RelayChatManager {
 									return 1;
 								})))
 				.then(ClientCommands.argument("name", StringArgumentType.word())
+						.suggests(FriendsManager::suggestFriends)
 						.then(ClientCommands.argument("message", StringArgumentType.greedyString())
 								.executes(ctx -> {
 									sendDirect(Minecraft.getInstance(), StringArgumentType.getString(ctx, "name"), StringArgumentType.getString(ctx, "message"));

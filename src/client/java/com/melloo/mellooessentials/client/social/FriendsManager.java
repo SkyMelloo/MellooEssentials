@@ -97,6 +97,7 @@ public final class FriendsManager {
 	}
 
 	public static void sendRequest(Minecraft client, String username) {
+		RecentUsernames.record(username);
 		ModAuthManager.getIdentity(client)
 				.thenCompose(identity -> ApiClient.sendFriendRequest(username, identity))
 				.whenComplete((result, error) -> Minecraft.getInstance().execute(() -> {
@@ -125,6 +126,7 @@ public final class FriendsManager {
 	}
 
 	public static void accept(Minecraft client, String username) {
+		RecentUsernames.record(username);
 		ModAuthManager.getIdentity(client)
 				.thenCompose(identity -> ApiClient.acceptFriendRequest(username, identity))
 				.whenComplete((result, error) -> Minecraft.getInstance().execute(() -> {
@@ -153,6 +155,7 @@ public final class FriendsManager {
 	}
 
 	public static void remove(Minecraft client, String username) {
+		RecentUsernames.record(username);
 		ModAuthManager.getIdentity(client)
 				.thenCompose(identity -> ApiClient.removeFriend(username, identity))
 				.whenComplete((result, error) -> Minecraft.getInstance().execute(() -> {
@@ -183,7 +186,8 @@ public final class FriendsManager {
 		}
 	}
 
-	private static java.util.concurrent.CompletableFuture<com.mojang.brigadier.suggestion.Suggestions> suggestFriends(
+	/** Package-visible (not private) - {@link RelayChatManager}'s "chat &lt;name&gt;" argument also suggests off this, since sendDirect only ever accepts a confirmed friend anyway. */
+	static java.util.concurrent.CompletableFuture<com.mojang.brigadier.suggestion.Suggestions> suggestFriends(
 			com.mojang.brigadier.context.CommandContext<FabricClientCommandSource> ctx,
 			com.mojang.brigadier.suggestion.SuggestionsBuilder builder) {
 		return SharedSuggestionProvider.suggest(friends.stream().map(ApiClient.FriendEntry::username), builder);
