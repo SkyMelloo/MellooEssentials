@@ -6,7 +6,6 @@ import com.melloo.mellooessentials.client.gui.SettingsScreen;
 import com.melloo.mellooessentials.client.gui.FpsMonitor;
 import com.melloo.mellooessentials.client.party.PartyTracker;
 import com.melloo.mellooessentials.client.social.HypixelLocationTracker;
-import com.melloo.mellooessentials.client.social.ModMarkerManager;
 import com.melloo.mellooessentials.client.social.PresenceManager;
 import com.melloo.mellooessentials.client.util.HypixelDetector;
 import com.melloo.mellooessentials.client.util.ServerPingMonitor;
@@ -17,7 +16,6 @@ import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
@@ -29,11 +27,6 @@ public class MellooEssentialsClient implements ClientModInitializer {
 	);
 
 	private static KeyMapping openSettingsKey;
-	// TEMPORARY - diagnosing a live report that the mod-user marker isn't showing on the local
-	// player's own nametag/tab row at all. Sends one plain chat line once, on the first tick a
-	// Hypixel player exists, reporting exactly what ModMarkerManager.isModUser resolves to for
-	// yourself - remove once the root cause is confirmed and actually fixed.
-	private static boolean markerDiagnosticSent = false;
 
 	@Override
 	public void onInitializeClient() {
@@ -70,13 +63,6 @@ public class MellooEssentialsClient implements ClientModInitializer {
 			PartyTracker.tick();
 			CosmeticsRenderer.tick(client);
 			PresenceManager.tick(client);
-
-			if (!markerDiagnosticSent && client.player != null) {
-				markerDiagnosticSent = true;
-				boolean isMod = ModMarkerManager.isModUser(client.player.getUUID());
-				client.player.sendSystemMessage(Component.literal("[MellooEssentials debug] isModUser(self)=" + isMod
-						+ " uuid=" + client.player.getUUID()));
-			}
 		});
 	}
 

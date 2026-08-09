@@ -62,8 +62,7 @@ public final class ModMarkerManager {
 		MutableComponent fallback = Component.literal(FALLBACK_GLYPH).setStyle(Style.EMPTY);
 		MutableComponent icon = MutableComponent.create(new ObjectContents(new AtlasSprite(AtlasIds.ITEMS, spriteId), Optional.of(fallback)));
 		icon.setStyle(Style.EMPTY);
-		MutableComponent spacer = Component.literal(" ").setStyle(Style.EMPTY);
-		return icon.append(spacer).append(original);
+		return icon.append(original);
 	}
 
 	/** Whether {@code uuid} should get a marker at all - true for the local player, or anyone {@link PresenceManager} has detected reporting presence. */
