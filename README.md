@@ -2,7 +2,7 @@
 
 A [Fabric](https://fabricmc.net/) client mod for Hypixel: party and team member highlighting, plus
 purely cosmetic particle effects. No account or login required. Paired with a companion page at
-[sky.melloo.me/mellooessentials](https://sky.melloo.me/mellooessentials).
+[sky.melloo.me/download](https://sky.melloo.me/download).
 
 Also the shared core [SkyMelloo](https://github.com/SkyMelloo/SkyMelloo) builds on - anything both
 mods need (cosmetics, a few shared utilities) lives here once, so SkyMelloo requires this mod
@@ -21,9 +21,8 @@ Hypixel Inc.
 ## Download
 
 The official, signed build is only ever distributed from
-**[sky.melloo.me/mellooessentials](https://sky.melloo.me/mellooessentials)**. If you got a jar from
-anywhere else, it isn't an official release - see Building below to make your own from this source
-instead.
+**[sky.melloo.me/download](https://sky.melloo.me/download)**. If you got a jar from anywhere else,
+it isn't an official release - see Building below to make your own from this source instead.
 
 ## Building
 
