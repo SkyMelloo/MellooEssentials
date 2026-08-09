@@ -113,7 +113,10 @@ public final class ConnectionStatusHud implements HudElement {
 
 		int x = config.hudConnectionStatusX >= 0 ? config.hudConnectionStatusX : 6;
 		int y = config.hudConnectionStatusY >= 0 ? config.hudConnectionStatusY : 6;
-		int width = Math.max(client.font.width(headline), client.font.width(detail)) + 20;
+		// Text gutter widened from 10px to 20px (see dotCx/textX below) - the dot's halo was nearly
+		// touching both the accent stripe and the text at its peak pulse size, a live report confirmed
+		// visible overlap. +20 -> +30 keeps the panel's own right-hand padding proportional to that.
+		int width = Math.max(client.font.width(headline), client.font.width(detail)) + 30;
 		int height = 26;
 
 		// Panel: the same (x-4, y-3) dark-glass-fill origin every other HUD in both mods uses (keeps
@@ -124,19 +127,23 @@ public final class ConnectionStatusHud implements HudElement {
 
 		// Gentle 2s breathing cycle (sine, not a linear ramp - reads as "alive" rather than mechanical)
 		// driving both the halo's and the core's radius, not just their opacity - a size pulse is what
-		// actually reads as "pulsing" at a glance, an opacity-only fade doesn't.
+		// actually reads as "pulsing" at a glance, an opacity-only fade doesn't. Bumped up from
+		// 4-6/2-3 to 5-7/3-4 - larger radii approximate a circle more smoothly via fillCircle's
+		// scanlines (a tiny 2-3px "circle" reads as blocky/square at a glance, a real live report).
 		double pulse = (Math.sin((System.currentTimeMillis() % 2000) / 2000.0 * Math.PI * 2) + 1) / 2;
-		int haloRadius = 4 + (int) Math.round(pulse * 2);
-		int coreRadius = 2 + (int) Math.round(pulse);
+		int haloRadius = 5 + (int) Math.round(pulse * 2);
+		int coreRadius = 3 + (int) Math.round(pulse);
 
-		// Centered on the headline's own text row (not straddling both lines like before) and sitting
-		// directly in front of "Connected" itself, in the same left gutter the accent stripe leaves free.
-		int dotCx = x + 3;
+		// Centered on the headline's own text row, with real clearance on both sides now (2px from the
+		// accent stripe on the left, ~6px from the text on the right, even at the halo's largest pulse
+		// size) instead of nearly touching either one.
+		int dotCx = x + 7;
 		int dotCy = y + 4;
+		int textX = x + 20;
 		fillCircle(gg, dotCx, dotCy, haloRadius, (statusColor & 0xFFFFFF) | 0x40000000);
 		fillCircle(gg, dotCx, dotCy, coreRadius, statusColor);
 
-		gg.text(client.font, headline, x + 10, y, statusColor);
-		gg.text(client.font, detail, x + 10, y + 12, 0xFFAAAAAA);
+		gg.text(client.font, headline, textX, y, statusColor);
+		gg.text(client.font, detail, textX, y + 12, 0xFFAAAAAA);
 	}
 }
