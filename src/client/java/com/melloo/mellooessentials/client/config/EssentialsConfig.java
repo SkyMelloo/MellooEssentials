@@ -70,8 +70,18 @@ public final class EssentialsConfig {
 	// depends on some other player's personal settings.
 
 	// ---- Info HUD ----
+	// Position defaults (-1) mean "not set yet, use each HUD's own sensible default corner" - the
+	// same convention SkyMelloo's own hud*X/Y fields use. Draggable via SkyMelloo's own HUD layout
+	// editor (key J) when it's installed, since that's the only positioning UI either mod has right
+	// now - see that screen's own doc comment.
 
 	public boolean playerInfoHudEnabled = false;
+	public int hudPlayerInfoX = -1;
+	public int hudPlayerInfoY = -1;
+
+	public boolean connectionStatusHudEnabled = true;
+	public int hudConnectionStatusX = -1;
+	public int hudConnectionStatusY = -1;
 
 	// ---- Cosmetics ----
 	// Same effect set/defaults as SkyMelloo's CosmeticsRenderer. Visible to other Hypixel

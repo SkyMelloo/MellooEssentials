@@ -116,9 +116,11 @@ public final class PlayerInfoHud implements HudElement {
 
 		List<String> lines = buildLines(client);
 
-		// Fixed top-left position - no drag-to-reposition HUD editor here, unlike SkyMelloo.
-		int x = 6;
-		int y = 6;
+		// Defaults to the top-left corner (matching the old hardcoded position) until explicitly
+		// moved - draggable via SkyMelloo's own HUD layout editor (key J) when it's installed, this
+		// mod has no positioning UI of its own.
+		int x = config.hudPlayerInfoX >= 0 ? config.hudPlayerInfoX : 6;
+		int y = config.hudPlayerInfoY >= 0 ? config.hudPlayerInfoY : 6;
 		int width = 8;
 		for (String line : lines) {
 			width = Math.max(width, client.font.width(line) + 8);

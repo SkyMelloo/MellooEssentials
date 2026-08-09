@@ -37,6 +37,21 @@ public final class ModAuthManager {
 	private static volatile long identityExpiresAt = 0;
 	private static volatile KeyPair ephemeralKeyPair = null;
 
+	/** Backs {@link com.melloo.mellooessentials.client.social.ConnectionStatusHud} - tracks whether this handshake has EVER succeeded, not just the current in-flight attempt. Sticky: a later transient failure after a real success stays CONNECTED rather than flickering back to ERROR, since {@link #getIdentity} is retried automatically anyway. */
+	public enum ConnectionState { CONNECTING, CONNECTED, ERROR }
+
+	private static volatile ConnectionState connectionState = ConnectionState.CONNECTING;
+	private static volatile long connectedSince = 0;
+
+	public static ConnectionState getConnectionState() {
+		return connectionState;
+	}
+
+	/** Epoch millis of the first successful authentication - only meaningful once {@link #getConnectionState()} is CONNECTED. */
+	public static long getConnectedSince() {
+		return connectedSince;
+	}
+
 	private ModAuthManager() {
 	}
 
@@ -120,9 +135,19 @@ public final class ModAuthManager {
 								return new ModIdentity(uuid, username, keyPair.getPrivate(), offset);
 							}));
 				})
+				.thenApply(identity -> {
+					if (connectionState != ConnectionState.CONNECTED) {
+						connectedSince = System.currentTimeMillis();
+					}
+					connectionState = ConnectionState.CONNECTED;
+					return identity;
+				})
 				.exceptionally(error -> {
 					LOGGER.debug("Mod auth failed: " + error.getMessage());
 					identityFuture = null;
+					if (connectionState != ConnectionState.CONNECTED) {
+						connectionState = ConnectionState.ERROR;
+					}
 					throw new CompletionException(error);
 				});
 	}

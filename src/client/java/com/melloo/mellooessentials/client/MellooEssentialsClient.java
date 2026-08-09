@@ -5,12 +5,14 @@ import com.melloo.mellooessentials.client.gui.PlayerInfoHud;
 import com.melloo.mellooessentials.client.gui.SettingsScreen;
 import com.melloo.mellooessentials.client.gui.FpsMonitor;
 import com.melloo.mellooessentials.client.party.PartyTracker;
+import com.melloo.mellooessentials.client.social.ConnectionStatusHud;
 import com.melloo.mellooessentials.client.social.HypixelLocationTracker;
 import com.melloo.mellooessentials.client.social.PresenceManager;
 import com.melloo.mellooessentials.client.util.HypixelDetector;
 import com.melloo.mellooessentials.client.util.ServerPingMonitor;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
@@ -41,10 +43,18 @@ public class MellooEssentialsClient implements ClientModInitializer {
 		HypixelLocationTracker.init();
 
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "player_info"), PlayerInfoHud.INSTANCE);
+		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "connection_status"), ConnectionStatusHud.INSTANCE);
+
+		// SkyMelloo binds the same default key (H) to its own, richer settings screen - when it's
+		// installed (always true for a SkyMelloo user, since it hard-depends on this mod), H should
+		// open THAT instead of a second, competing screen. This mod's own settings stay reachable via
+		// its SettingsScreen(parent, openToCosmetics) constructor (SkyMelloo's H-menu links there) and
+		// the "SkyMelloo Config" button that screen shows back, rather than via this key at all.
+		boolean skyMellooInstalled = FabricLoader.getInstance().isModLoaded("skymelloo");
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			while (openSettingsKey.consumeClick()) {
-				if (client.screen == null) {
+				if (client.screen == null && !skyMellooInstalled) {
 					client.setScreen(new SettingsScreen(null));
 				}
 			}

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Centered, tabbed popup card (same bordered-panel style as SkyMelloo's StringInputScreen).
@@ -51,6 +52,19 @@ public class SettingsScreen extends Screen {
 	// settings menu, not just switching tabs within one open session - there's only ever one of
 	// these menus open at a time, so sharing this across instances is safe.
 	private static final java.util.Map<Tab, Integer> scrollByTab = new java.util.EnumMap<>(Tab.class);
+
+	// SkyMelloo (which depends on this mod, never the other way around) registers a callback that
+	// opens its own settings screen here at startup, so this screen can offer a button back to it
+	// without ever referencing SkyMelloo's classes directly - same extension-point pattern as
+	// ModMarkerManager#setSpriteOverride. A plain Runnable (not a Supplier<Screen>) since SkyMelloo's
+	// own open-settings entry point is itself a self-contained static method that calls
+	// Minecraft#setScreen internally (plus a couple of refresh side effects) rather than just
+	// constructing a Screen. Null (no button shown) when SkyMelloo isn't installed.
+	private static volatile Runnable openSkyMellooScreen = null;
+
+	public static void setSkyMellooScreenOpener(Runnable opener) {
+		openSkyMellooScreen = opener;
+	}
 
 	private final Screen parent;
 	private final List<RowFactory> rows = new ArrayList<>();
@@ -199,6 +213,15 @@ public class SettingsScreen extends Screen {
 			EssentialsConfig.save();
 			Minecraft.getInstance().setScreen(parent);
 		}));
+
+		Runnable opener = openSkyMellooScreen;
+		if (opener != null) {
+			int w = 120;
+			addRenderableWidget(new StyledButton(px + pw - w - 10, panelY() + 8, w, 16, "SkyMelloo Config", 0xFFFF6EC7, () -> {
+				EssentialsConfig.save();
+				opener.run();
+			}));
+		}
 	}
 
 	private int contentHeight() {
