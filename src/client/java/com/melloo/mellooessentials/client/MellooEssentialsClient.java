@@ -1,23 +1,32 @@
 package com.melloo.mellooessentials.client;
 
+import com.melloo.mellooessentials.client.api.ApiClient;
+import com.melloo.mellooessentials.client.api.ModAuthManager;
 import com.melloo.mellooessentials.client.cosmetics.CosmeticsRenderer;
 import com.melloo.mellooessentials.client.gui.PlayerInfoHud;
 import com.melloo.mellooessentials.client.gui.SettingsScreen;
+import com.melloo.mellooessentials.client.gui.SocialMenuScreen;
 import com.melloo.mellooessentials.client.gui.FpsMonitor;
 import com.melloo.mellooessentials.client.party.PartyTracker;
 import com.melloo.mellooessentials.client.social.ConnectionStatusHud;
+import com.melloo.mellooessentials.client.social.FriendsManager;
 import com.melloo.mellooessentials.client.social.HypixelLocationTracker;
 import com.melloo.mellooessentials.client.social.PresenceManager;
+import com.melloo.mellooessentials.client.social.RelayChatManager;
+import com.melloo.mellooessentials.client.social.StaffEncounterTracker;
+import com.melloo.mellooessentials.client.util.ChatUtil;
 import com.melloo.mellooessentials.client.util.HypixelDetector;
 import com.melloo.mellooessentials.client.util.ServerPingMonitor;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
@@ -29,6 +38,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 	);
 
 	private static KeyMapping openSettingsKey;
+	private static KeyMapping socialMenuKey;
 
 	@Override
 	public void onInitializeClient() {
@@ -39,30 +49,46 @@ public class MellooEssentialsClient implements ClientModInitializer {
 				CATEGORY
 		));
 
+		// Opens the Social menu (friends list, see SocialMenuScreen) - moved here from SkyMelloo
+		// along with the rest of the Friends system. Defaults to G (free in vanilla, same default
+		// SkyMelloo's own key used to have).
+		socialMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+				"key.mellooessentials.social_menu",
+				InputConstants.Type.KEYSYM,
+				GLFW.GLFW_KEY_G,
+				CATEGORY
+		));
+
 		PartyTracker.init();
 		HypixelLocationTracker.init();
 
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "player_info"), PlayerInfoHud.INSTANCE);
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "connection_status"), ConnectionStatusHud.INSTANCE);
 
-		// SkyMelloo binds the same default key (H) to its own, richer settings screen - when it's
-		// installed (always true for a SkyMelloo user, since it hard-depends on this mod), H should
-		// open THAT instead of a second, competing screen. This mod's own settings stay reachable via
-		// its SettingsScreen(parent, openToCosmetics) constructor (SkyMelloo's H-menu links there) and
-		// the "SkyMelloo Config" button that screen shows back, rather than via this key at all.
-		boolean skyMellooInstalled = FabricLoader.getInstance().isModLoaded("skymelloo");
-
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
+			// H always opens this mod's settings screen, whether or not SkyMelloo is also installed -
+			// this is the single settings/status/player-info surface for both mods now (SkyMelloo's
+			// own settings screen no longer binds a default key at all, reachable instead via the
+			// "SkyMelloo Config" button this screen shows when SkyMelloo is installed).
 			while (openSettingsKey.consumeClick()) {
-				if (client.screen == null && !skyMellooInstalled) {
+				if (client.screen == null) {
 					client.setScreen(new SettingsScreen(null));
 				}
 			}
+			while (socialMenuKey.consumeClick()) {
+				if (client.screen == null) {
+					client.setScreen(new SocialMenuScreen());
+				}
+			}
 
-			// Runs regardless of server - these measure the actual connection/game itself, not
+			// Runs regardless of server - these measure the actual connection/game itself, or (for
+			// Friends/relay chat/staff-encounter tracking) are meant to keep working anywhere, not
 			// anything Hypixel-specific.
 			FpsMonitor.tick(client);
 			ServerPingMonitor.tick(client);
+			FriendsManager.tick(client);
+			RelayChatManager.tick(client);
+			StaffEncounterTracker.tick(client);
 
 			// Everything else is Hypixel-only - no reason to run party tracking/cosmetics/presence on
 			// any other server.
@@ -74,6 +100,93 @@ public class MellooEssentialsClient implements ClientModInitializer {
 			CosmeticsRenderer.tick(client);
 			PresenceManager.tick(client);
 		});
+
+		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
+			var mellooessentialsNode = dispatcher.register(
+					ClientCommands.literal("mellooessentials")
+							.executes(ctx -> {
+								sendHelp(ctx.getSource());
+								return 1;
+							})
+							.then(ClientCommands.literal("help").executes(ctx -> {
+								sendHelp(ctx.getSource());
+								return 1;
+							}))
+							.then(FriendsManager.buildFriendCommand())
+							.then(RelayChatManager.buildChatCommand())
+							// Named after the German "Staff getroffen" ("met/encountered staff") - a running
+							// list of every real staff/owner member you've ever shared a tab list with,
+							// anywhere (see StaffEncounterTracker, which keeps scanning regardless of server).
+							// Moved here from SkyMelloo's "/sm hitstaff".
+							.then(ClientCommands.literal("hitstaff").executes(ctx -> {
+								var source = ctx.getSource();
+								Minecraft client = Minecraft.getInstance();
+								ModAuthManager.getIdentity(client)
+										.exceptionally(error -> null)
+										.thenCompose(ApiClient::fetchStaffEncounters)
+										.thenAccept(encounters -> client.execute(() -> {
+											if (encounters.isEmpty()) {
+												source.sendFeedback(ChatUtil.prefixed("§7No staff encountered yet."));
+												return;
+											}
+											var sorted = new java.util.ArrayList<>(encounters);
+											sorted.sort((a, b) -> Long.compare(b.lastSeenMillis(), a.lastSeenMillis()));
+											source.sendFeedback(ChatUtil.prefixed("§6=== Staff Encountered (" + sorted.size() + ") ==="));
+											long now = System.currentTimeMillis();
+											for (var entry : sorted) {
+												String roleLabel = switch (entry.role()) {
+													case "owner" -> "Owner";
+													case "admin" -> "Admin";
+													case "developer" -> "Developer";
+													case "moderator" -> "Moderator";
+													default -> entry.role();
+												};
+												String displayName = entry.websiteDisplayName() != null ? entry.websiteDisplayName() : entry.username();
+												source.sendFeedback(ChatUtil.prefixed("§6[" + roleLabel + "] §f" + displayName + " §7- last seen " + formatAgo(now - entry.lastSeenMillis()) + " ago"));
+											}
+										}));
+								return 1;
+							}))
+			);
+			dispatcher.register(ClientCommands.literal("me").redirect(mellooessentialsNode));
+		});
+	}
+
+	private static void sendHelp(net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource source) {
+		source.sendFeedback(ChatUtil.prefixed("§6=== MellooEssentials Commands §7(also as §f/me§7) ==="));
+		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials friend <name>§7/§aaccept§7/§adecline§7/§aremove§7/§alist §7- manage friends"));
+		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials chat party <msg>§7/§achat <name> <msg> §7- relay chat (party or direct)"));
+		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials hitstaff §7- staff you've encountered before"));
+	}
+
+	/** Rough "X ago" duration for /me hitstaff - coarsest unit only (a last-seen from 2 days ago doesn't need minute precision). */
+	private static String formatAgo(long millisAgo) {
+		long seconds = millisAgo / 1000;
+		if (seconds < 60) {
+			return "moments";
+		}
+		long minutes = seconds / 60;
+		if (minutes < 60) {
+			return minutes + " minute" + (minutes == 1 ? "" : "s");
+		}
+		long hours = minutes / 60;
+		if (hours < 24) {
+			return hours + " hour" + (hours == 1 ? "" : "s");
+		}
+		long days = hours / 24;
+		return days + " day" + (days == 1 ? "" : "s");
+	}
+
+	public static java.util.concurrent.CompletableFuture<com.mojang.brigadier.suggestion.Suggestions> suggestOnlinePlayers(
+			com.mojang.brigadier.context.CommandContext<net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource> ctx,
+			com.mojang.brigadier.suggestion.SuggestionsBuilder builder) {
+		Minecraft client = Minecraft.getInstance();
+		if (client.getConnection() == null) {
+			return builder.buildFuture();
+		}
+		return SharedSuggestionProvider.suggest(
+				client.getConnection().getOnlinePlayers().stream().map(info -> info.getProfile().name()),
+				builder);
 	}
 
 	public static KeyMapping getOpenSettingsKey() {

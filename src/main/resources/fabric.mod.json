@@ -8,7 +8,7 @@
 		"hexedmaya"
 	],
 	"contact": {
-		"homepage": "https://sky.melloo.me/mellooessentials"
+		"homepage": "https://sky.melloo.me/download"
 	},
 	"license": "AGPL-3.0-or-later",
 	"environment": "client",
@@ -28,7 +28,8 @@
 		"minecraft": "~26.1.2",
 		"java": ">=25",
 		"fabric-api": "*",
-		"hypixel-mod-api": "*"
+		"hypixel-mod-api": "*",
+		"skyblocker": "*"
 	},
 	"custom": {
 		"mellooessentials:publicVersion": "${publicVersion}",

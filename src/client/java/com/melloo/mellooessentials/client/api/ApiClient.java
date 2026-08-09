@@ -215,4 +215,163 @@ public final class ApiClient {
 			return result;
 		});
 	}
+
+	// -------------------------------------------------------------------------------------------
+	// SkyMelloo Friends + relay chat - moved here from SkyMelloo's own SkyMellooApiClient (this was
+	// always a SkyMelloo-branded feature name, but never actually keyed off the sky.melloo.me
+	// account link - only the same anonymous per-launch ModIdentity this mod already uses for
+	// presence, so it works identically here with zero server-side changes.
+	// -------------------------------------------------------------------------------------------
+	public record FriendEntry(String uuid, String username) {
+	}
+
+	public record FriendRequestEntry(String uuid, String username, long at) {
+	}
+
+	public record FriendsList(List<FriendEntry> friends, List<FriendRequestEntry> requests) {
+	}
+
+	public static CompletableFuture<FriendsList> fetchFriends(ModAuthManager.ModIdentity identity) {
+		return getJson("/mod/friends", identity).thenApply(root -> {
+			List<FriendEntry> friendsList = new ArrayList<>();
+			if (root.has("friends") && root.get("friends").isJsonArray()) {
+				for (JsonElement el : root.getAsJsonArray("friends")) {
+					JsonObject o = el.getAsJsonObject();
+					friendsList.add(new FriendEntry(o.get("uuid").getAsString(), o.get("username").getAsString()));
+				}
+			}
+			List<FriendRequestEntry> requestsList = new ArrayList<>();
+			if (root.has("requests") && root.get("requests").isJsonArray()) {
+				for (JsonElement el : root.getAsJsonArray("requests")) {
+					JsonObject o = el.getAsJsonObject();
+					requestsList.add(new FriendRequestEntry(o.get("uuid").getAsString(), o.get("username").getAsString(), o.get("at").getAsLong()));
+				}
+			}
+			return new FriendsList(friendsList, requestsList);
+		});
+	}
+
+	/** {@code status} is one of "self", "already_friends", "accepted" (they'd already requested you back), "pending", or "limit". */
+	public record FriendRequestResult(String username, String status) {
+	}
+
+	private static CompletableFuture<FriendRequestResult> friendAction(String path, String username, ModAuthManager.ModIdentity identity) {
+		JsonObject body = new JsonObject();
+		body.addProperty("username", username);
+		return postJson(path, body, identity)
+				.thenApply(root -> new FriendRequestResult(
+						root.has("username") && !root.get("username").isJsonNull() ? root.get("username").getAsString() : username,
+						root.has("status") && !root.get("status").isJsonNull() ? root.get("status").getAsString() : null));
+	}
+
+	public static CompletableFuture<FriendRequestResult> sendFriendRequest(String username, ModAuthManager.ModIdentity identity) {
+		return friendAction("/mod/friends/request", username, identity);
+	}
+
+	public static CompletableFuture<FriendRequestResult> acceptFriendRequest(String username, ModAuthManager.ModIdentity identity) {
+		return friendAction("/mod/friends/accept", username, identity);
+	}
+
+	public static CompletableFuture<FriendRequestResult> declineFriendRequest(String username, ModAuthManager.ModIdentity identity) {
+		return friendAction("/mod/friends/decline", username, identity);
+	}
+
+	public static CompletableFuture<FriendRequestResult> removeFriend(String username, ModAuthManager.ModIdentity identity) {
+		return friendAction("/mod/friends/remove", username, identity);
+	}
+
+	/** Sends a DM to a friend by username - the server rejects it (403) unless the two accounts are already confirmed friends. */
+	public static CompletableFuture<Boolean> sendRelayMessage(String toUsername, String text, ModAuthManager.ModIdentity identity) {
+		JsonObject body = new JsonObject();
+		body.addProperty("toUsername", toUsername);
+		body.addProperty("text", text);
+		return postJson("/mod/relay/message", body, identity)
+				.thenApply(root -> true)
+				.exceptionally(error -> false);
+	}
+
+	/** Broadcasts to a caller-resolved list of party-member UUIDs (the server has no visibility into real Hypixel parties, so this trusts whichever roster the mod itself resolved). */
+	public static CompletableFuture<Boolean> sendRelayPartyMessage(List<String> toUuids, String text, ModAuthManager.ModIdentity identity) {
+		JsonObject body = new JsonObject();
+		JsonArray uuidsArr = new JsonArray();
+		for (String uuid : toUuids) {
+			uuidsArr.add(uuid);
+		}
+		body.add("toUuids", uuidsArr);
+		body.addProperty("text", text);
+		return postJson("/mod/relay/party", body, identity)
+				.thenApply(root -> true)
+				.exceptionally(error -> false);
+	}
+
+	/** One relayed message waiting in the inbox - {@code scope} is "dm" or "party". */
+	public record RelayMessage(String fromUuid, String fromUsername, String text, String scope) {
+	}
+
+	/** Drains (not peeks) everything currently queued for this account - polled every few seconds by RelayChatManager. */
+	public static CompletableFuture<List<RelayMessage>> fetchRelayInbox(ModAuthManager.ModIdentity identity) {
+		return getJson("/mod/relay/inbox", identity).thenApply(root -> {
+			List<RelayMessage> result = new ArrayList<>();
+			if (root.has("messages") && root.get("messages").isJsonArray()) {
+				for (JsonElement el : root.getAsJsonArray("messages")) {
+					JsonObject o = el.getAsJsonObject();
+					result.add(new RelayMessage(
+							o.get("from").getAsString(),
+							o.has("fromUsername") && !o.get("fromUsername").isJsonNull() ? o.get("fromUsername").getAsString() : "?",
+							o.get("text").getAsString(),
+							o.has("scope") && !o.get("scope").isJsonNull() ? o.get("scope").getAsString() : "dm"));
+				}
+			}
+			return result;
+		}).exceptionally(error -> List.of());
+	}
+
+	// -------------------------------------------------------------------------------------------
+	// Encountered staff - moved here from SkyMelloo's own SkyMellooApiClient/StaffEncounterTracker,
+	// same zero-server-change reasoning as Friends above.
+	// -------------------------------------------------------------------------------------------
+
+	/** One nearby player, as seen in the tab list - all the server needs to check them against the staff/owner roster. */
+	public record StaffCheckEntry(String uuid, String username) {
+	}
+
+	/** Reports everyone currently visible in the tab list so the server can record an encounter for any of them that resolve to a real staff/owner role - fire-and-forget. */
+	public static CompletableFuture<Void> reportStaffEncounters(List<StaffCheckEntry> players, ModAuthManager.ModIdentity identity) {
+		JsonObject body = new JsonObject();
+		JsonArray playersArr = new JsonArray();
+		for (StaffCheckEntry p : players) {
+			JsonObject entry = new JsonObject();
+			entry.addProperty("uuid", p.uuid());
+			entry.addProperty("username", p.username());
+			playersArr.add(entry);
+		}
+		body.add("players", playersArr);
+		return postJson("/mod/staff-encounters", body, identity).thenApply(root -> null);
+	}
+
+	/** One staff/owner member this account has ever been seen alongside, per the server's own encounter log - see the "/mellooessentials hitstaff" command. websiteDisplayName is null when that staff uuid has no linked sky.melloo.me website account. */
+	public record StaffEncounterEntry(String uuid, String username, String role, long firstSeenMillis, long lastSeenMillis, String websiteDisplayName) {
+	}
+
+	public static CompletableFuture<List<StaffEncounterEntry>> fetchStaffEncounters(ModAuthManager.ModIdentity identity) {
+		return getJson("/mod/staff-encounters", identity).thenApply(root -> {
+			List<StaffEncounterEntry> result = new ArrayList<>();
+			if (root.has("encounters") && root.get("encounters").isJsonArray()) {
+				for (JsonElement el : root.getAsJsonArray("encounters")) {
+					if (!el.isJsonObject()) {
+						continue;
+					}
+					JsonObject o = el.getAsJsonObject();
+					result.add(new StaffEncounterEntry(
+							o.get("uuid").getAsString(),
+							o.get("username").getAsString(),
+							o.get("role").getAsString(),
+							o.get("firstSeenMillis").getAsLong(),
+							o.get("lastSeenMillis").getAsLong(),
+							o.has("websiteDisplayName") && !o.get("websiteDisplayName").isJsonNull() ? o.get("websiteDisplayName").getAsString() : null));
+				}
+			}
+			return result;
+		}).exceptionally(error -> List.of());
+	}
 }

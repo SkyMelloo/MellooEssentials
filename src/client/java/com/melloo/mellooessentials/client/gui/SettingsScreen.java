@@ -128,6 +128,7 @@ public class SettingsScreen extends Screen {
 				rows.add(infoRow("Party and team highlighting are always active."));
 				rows.add(headerRow("HUD"));
 				rows.add(boolRow("Player Info HUD (FPS/ping/TPS/server/area/coords/facing)", () -> c.playerInfoHudEnabled, v -> c.playerInfoHudEnabled = v));
+				rows.add(boolRow("Connection Status HUD (sky.melloo.me)", () -> c.connectionStatusHudEnabled, v -> c.connectionStatusHudEnabled = v));
 			}
 			case COSMETICS -> {
 				rows.add(boolRow("Cosmetics Enabled (master switch)", () -> c.cosmeticsEnabled, v -> c.cosmeticsEnabled = v));
