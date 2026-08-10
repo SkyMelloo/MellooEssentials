@@ -37,10 +37,8 @@ public final class HighlightManager {
 	// not a separate shade invented just for this.
 	private static final int PARTY_COLOR = 0xFF66DDFF;
 	private static final int STAFF_COLOR = 0xFFFF66CC; // pink
-	// Vanilla's own full-heart HUD sprite (the exact icon the health bar itself uses) - a real heart,
-	// not the tiny "♥" text glyph this used to be, which read as an odd little mark rather than an
-	// actual heart at nametag text size. Same inline-sprite technique ModMarkerManager's dye icon uses
-	// (ObjectContents/AtlasSprite), just off the GUI atlas instead of the item atlas.
+	// Vanilla's own full-heart HUD sprite - same inline-sprite technique ModMarkerManager's dye icon
+	// uses, off the GUI atlas instead of the item atlas.
 	private static final Identifier HEART_SPRITE = Identifier.withDefaultNamespace("hud/heart/full");
 
 	private enum Category {
@@ -50,13 +48,8 @@ public final class HighlightManager {
 	private HighlightManager() {
 	}
 
-	// Lets SkyMelloo (which depends on this mod, never the other way around) substitute a different
-	// color for a specific party member's glow/marker right now - used for the low-HP blink (flashes
-	// red under 25% HP), a SkyMelloo-only feature this mod has no data for on its own. Passed the
-	// uuid and the color that would otherwise apply; returns a replacement or null to leave it as-is.
-	// Safe in a way the old (removed) sprite-override hook wasn't: this always recomputes fresh from
-	// local HP data on both sides, never a one-way "which mod is this" guess that could go stale/wrong
-	// depending on which client is asking.
+	// Lets SkyMelloo substitute a different color for a party member's glow/marker right now - used
+	// for the low-HP blink, a SkyMelloo-only feature this mod has no HP data for on its own.
 	private static volatile BiFunction<UUID, Integer, Integer> partyBlinkColorOverride = null;
 
 	public static void setPartyBlinkColorOverride(BiFunction<UUID, Integer, Integer> resolver) {

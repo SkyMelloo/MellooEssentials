@@ -20,13 +20,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Thin client for sky.melloo.me's EXISTING mod-auth + presence routes - reused as-is (no new
- * server-side code at all): the ephemeral-keypair handshake ({@code /mod/auth/challenge}/
- * {@code /mod/auth/verify}, see {@link ModAuthManager}) only proves a live Mojang session for a
- * real Minecraft account, nothing account/Discord-specific, so any mod can complete it. Presence
- * report/query ({@code /presence}, {@code /presence/query}) already return each nearby player's
- * reported cosmetics AND their server-resolved sky.melloo.me team role, which is exactly what's
- * needed here for cosmetics sync and staff highlighting - no separate backend needed.
+ * Thin client for sky.melloo.me's mod-auth + presence routes. The ephemeral-keypair handshake
+ * ({@link ModAuthManager}) proves a live Mojang session for any mod. Presence report/query also
+ * return each nearby player's cosmetics and sky.melloo.me team role, used for cosmetics sync and
+ * staff highlighting.
  */
 public final class ApiClient {
 	private static final String BASE_URL = "https://sky.melloo.me/api";
@@ -163,7 +160,7 @@ public final class ApiClient {
 				.thenApply(root -> new SessionResult(root.get("expiresAt").getAsLong()));
 	}
 
-	// ---- admin account verification (moved here from SkyMelloo's own "/skymelloo verify") ----
+	// ---- admin account verification ----
 
 	public record VerifyResult(boolean ok, String error) {
 	}
@@ -234,10 +231,8 @@ public final class ApiClient {
 	}
 
 	// -------------------------------------------------------------------------------------------
-	// SkyMelloo Friends + relay chat - moved here from SkyMelloo's own SkyMellooApiClient (this was
-	// always a SkyMelloo-branded feature name, but never actually keyed off the sky.melloo.me
-	// account link - only the same anonymous per-launch ModIdentity this mod already uses for
-	// presence, so it works identically here with zero server-side changes.
+	// SkyMelloo Friends + relay chat - keyed only by the anonymous per-launch ModIdentity also used
+	// for presence, never a sky.melloo.me account link, despite the SkyMelloo-branded name.
 	// -------------------------------------------------------------------------------------------
 	public record FriendEntry(String uuid, String username) {
 	}
@@ -385,10 +380,7 @@ public final class ApiClient {
 				.exceptionally(error -> false);
 	}
 
-	// -------------------------------------------------------------------------------------------
-	// Encountered staff - moved here from SkyMelloo's own SkyMellooApiClient/StaffEncounterTracker,
-	// same zero-server-change reasoning as Friends above.
-	// -------------------------------------------------------------------------------------------
+	// ---- encountered staff ----
 
 	/** One nearby player, as seen in the tab list - all the server needs to check them against the staff/owner roster. */
 	public record StaffCheckEntry(String uuid, String username) {

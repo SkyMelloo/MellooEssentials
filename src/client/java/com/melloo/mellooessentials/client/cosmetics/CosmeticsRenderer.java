@@ -206,17 +206,9 @@ public final class CosmeticsRenderer {
 	}
 
 	/**
-	 * A drift-free, per-player rotation phase derived from world time plus that player's own offset,
-	 * replacing what used to be a single {@code static float angle} incremented by every call to a
-	 * render method. That old approach had two real bugs, not just a cosmetic one: the angle
-	 * advanced FASTER the more nearby players happened to have the same cosmetic on (every one of
-	 * them incremented the same shared field once per tick), and every player sharing a cosmetic
-	 * always rendered in perfect lockstep with each other, since they all read the exact same
-	 * evolving number. Deriving the phase from {@code getGameTime()} (which ticks once per tick no
-	 * matter how many players are rendered) plus a fixed per-player offset fixes both at once: speed
-	 * is now independent of player count, and different players are never in phase with each other by
-	 * coincidence. {@code speed} is in radians/tick, matching the old increments' units exactly, so a
-	 * single player alone sees no behavior change at all.
+	 * A drift-free, per-player rotation phase derived from world time plus a fixed per-player offset
+	 * - speed stays independent of player count, and different players are never in phase with each
+	 * other by coincidence. {@code speed} is in radians/tick.
 	 */
 	private static float phase(Minecraft client, AbstractClientPlayer player, float speed) {
 		long gameTime = client.level.getGameTime() + tickOffset(player);

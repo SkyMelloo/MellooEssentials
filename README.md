@@ -1,8 +1,8 @@
 # MellooEssentials
 
-A [Fabric](https://fabricmc.net/) client mod for Hypixel: party and team member highlighting, plus
-purely cosmetic particle effects. No account or login required. Paired with a companion page at
-[sky.melloo.me/download](https://sky.melloo.me/download).
+A lightweight [Fabric](https://fabricmc.net/) client mod for Hypixel: party/team highlighting, a
+mod-native friends system, and cloud-synced settings - no sky.melloo.me account needed. Paired
+with a companion page at [sky.melloo.me/download](https://sky.melloo.me/download).
 
 Also the shared core [SkyMelloo](https://github.com/SkyMelloo/SkyMelloo) builds on - anything both
 mods need (cosmetics, a few shared utilities) lives here once, so SkyMelloo requires this mod
@@ -13,10 +13,13 @@ Hypixel Inc.
 
 ## Features
 
-- **Cosmetics** - dozens of purely cosmetic particle effects (halos, trails, auras, procedural
-  shapes, a physics-simulated cape), shared with nearby players also running the mod.
-- **Highlighting** - party and team member glow.
-- **Party tools** - party membership tracking via Hypixel's own Mod API.
+- **Highlighting** - party and team member glow, colored on the tab list and nametags.
+- **SkyMelloo Friends** - a mod-native friend list with relay chat (key G). Uses only your
+  Minecraft account's own identity - no sky.melloo.me account or login needed.
+- **Cloud Saves** - your settings follow you to a new device/reinstall automatically. Same as
+  Friends, this only ever uses your Minecraft account's own identity.
+- Also includes purely cosmetic particle effects (halos, trails, auras, a physics-simulated cape),
+  shared with nearby players also running the mod.
 
 ## Download
 
@@ -33,11 +36,9 @@ Requires JDK 25.
 ./gradlew build -PchangelogFile=path.txt   # dev build, needs the signing key + a changelog
 ```
 
-The build also runs a couple of automated tasks (`reportBuild`, `uploadJar`) that talk to
-sky.melloo.me for release tracking - these fail silently/non-fatally if you don't have the
-maintainer's own tokens (which live outside this repo entirely and are never distributed with it).
-You're free to share a test build with others too, by the way - this is AGPL-3.0, same as the rest
-of the project.
+The build also runs `reportBuild`/`uploadJar` for sky.melloo.me release tracking - these fail
+silently without the maintainer's own tokens, which live outside this repo. Test builds are
+shareable - this is AGPL-3.0.
 
 ## Community
 

@@ -55,9 +55,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 				CATEGORY
 		));
 
-		// Opens the Social menu (friends list, see SocialMenuScreen) - moved here from SkyMelloo
-		// along with the rest of the Friends system. Defaults to G (free in vanilla, same default
-		// SkyMelloo's own key used to have).
+		// Opens the Social menu (friends list, see SocialMenuScreen) - defaults to G (free in vanilla).
 		socialMenuKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
 				"key.mellooessentials.social_menu",
 				InputConstants.Type.KEYSYM,
@@ -173,9 +171,8 @@ public class MellooEssentialsClient implements ClientModInitializer {
 										}));
 								return 1;
 							}))
-							// Admin account verification - moved here from SkyMelloo's own "/skymelloo
-							// verify", since the server-side check is mod-agnostic (any mod's valid signature
-							// works) and this is the shared core mod SkyMelloo depends on anyway.
+							// Admin account verification - the server-side check is mod-agnostic, any mod's
+							// valid signature works.
 							.then(ClientCommands.literal("verify")
 									.executes(ctx -> {
 										ctx.getSource().sendFeedback(ChatUtil.prefixed("§cUsage: §f/me verify <code>"));
