@@ -8,6 +8,8 @@ import com.melloo.mellooessentials.client.gui.PlayerInfoHud;
 import com.melloo.mellooessentials.client.gui.SettingsScreen;
 import com.melloo.mellooessentials.client.gui.SocialMenuScreen;
 import com.melloo.mellooessentials.client.gui.FpsMonitor;
+import com.melloo.mellooessentials.client.party.BlockedUsersManager;
+import com.melloo.mellooessentials.client.party.PartyKickQueue;
 import com.melloo.mellooessentials.client.party.PartyTracker;
 import com.melloo.mellooessentials.client.social.ConnectionStatusHud;
 import com.melloo.mellooessentials.client.social.FriendsManager;
@@ -73,6 +75,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 		));
 
 		PartyTracker.init();
+		PartyKickQueue.init();
 		HypixelLocationTracker.init();
 
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "player_info"), PlayerInfoHud.INSTANCE);
@@ -132,6 +135,8 @@ public class MellooEssentialsClient implements ClientModInitializer {
 							}))
 							.then(FriendsManager.buildFriendCommand())
 							.then(RelayChatManager.buildChatCommand())
+							.then(BlockedUsersManager.buildBlockCommand())
+							.then(BlockedUsersManager.buildUnblockCommand())
 							// Named after the German "Staff getroffen" ("met/encountered staff") - a running
 							// list of every real staff/owner member you've ever shared a tab list with,
 							// anywhere (see StaffEncounterTracker, which keeps scanning regardless of server).
@@ -175,6 +180,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials friend <name>§7/§aaccept§7/§adecline§7/§aremove§7/§alist §7- manage friends"));
 		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials chat party <msg>§7/§achat <name> <msg> §7- relay chat (party or direct)"));
 		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials hitstaff §7- staff you've encountered before"));
+		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials block <name>§7/§aunblock <name> §7- block a party member (auto-kick)"));
 	}
 
 	/** Rough "X ago" duration for /me hitstaff - coarsest unit only (a last-seen from 2 days ago doesn't need minute precision). */

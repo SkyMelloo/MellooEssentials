@@ -2,14 +2,20 @@ package com.melloo.mellooessentials.client.highlight;
 
 import com.melloo.mellooessentials.client.party.PartyTracker;
 import com.melloo.mellooessentials.client.social.PresenceManager;
+import net.minecraft.data.AtlasIds;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
+import net.minecraft.network.chat.contents.ObjectContents;
+import net.minecraft.network.chat.contents.objects.AtlasSprite;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.BiFunction;
 
 /**
  * Decides which players get the forced-glow highlight treatment (in-world nametag + Tab-list row).
@@ -26,12 +32,42 @@ public final class HighlightManager {
 	// not a separate shade invented just for this.
 	private static final int PARTY_COLOR = 0xFF66DDFF;
 	private static final int STAFF_COLOR = 0xFFFF66CC; // pink
+	// Vanilla's own full-heart HUD sprite (the exact icon the health bar itself uses) - a real heart,
+	// not the tiny "♥" text glyph this used to be, which read as an odd little mark rather than an
+	// actual heart at nametag text size. Same inline-sprite technique ModMarkerManager's dye icon uses
+	// (ObjectContents/AtlasSprite), just off the GUI atlas instead of the item atlas.
+	private static final Identifier HEART_SPRITE = Identifier.withDefaultNamespace("hud/heart/full");
 
 	private enum Category {
 		STAFF, PARTY, NONE
 	}
 
 	private HighlightManager() {
+	}
+
+	// Lets SkyMelloo (which depends on this mod, never the other way around) substitute a different
+	// color for a specific party member's glow/marker right now - used for the low-HP blink (flashes
+	// red under 25% HP), a SkyMelloo-only feature this mod has no data for on its own. Passed the
+	// uuid and the color that would otherwise apply; returns a replacement or null to leave it as-is.
+	// Safe in a way the old (removed) sprite-override hook wasn't: this always recomputes fresh from
+	// local HP data on both sides, never a one-way "which mod is this" guess that could go stale/wrong
+	// depending on which client is asking.
+	private static volatile BiFunction<UUID, Integer, Integer> partyBlinkColorOverride = null;
+
+	public static void setPartyBlinkColorOverride(BiFunction<UUID, Integer, Integer> resolver) {
+		partyBlinkColorOverride = resolver;
+	}
+
+	private static int applyBlinkOverride(UUID uuid, Category category, int color) {
+		if (category != Category.PARTY) {
+			return color;
+		}
+		BiFunction<UUID, Integer, Integer> override = partyBlinkColorOverride;
+		if (override == null) {
+			return color;
+		}
+		Integer replaced = override.apply(uuid, color);
+		return replaced != null ? replaced : color;
 	}
 
 	private static Category classify(UUID uuid) {
@@ -55,33 +91,42 @@ public final class HighlightManager {
 	}
 
 	public static int getGlowColor(Entity entity) {
-		return classify(entity) == Category.STAFF ? STAFF_COLOR : PARTY_COLOR;
+		Category category = classify(entity);
+		int base = category == Category.STAFF ? STAFF_COLOR : PARTY_COLOR;
+		UUID uuid = entity instanceof Player player ? player.getUUID() : null;
+		return uuid != null ? applyBlinkOverride(uuid, category, base) : base;
 	}
 
 	/** The fixed ARGB color this UUID's Tab-list row/nametag should be forced to, or {@code null} if neither staff nor party. */
 	public static Integer getFixedColor(UUID uuid) {
-		return switch (classify(uuid)) {
+		Category category = classify(uuid);
+		return switch (category) {
 			case STAFF -> STAFF_COLOR;
-			case PARTY -> PARTY_COLOR;
+			case PARTY -> applyBlinkOverride(uuid, category, PARTY_COLOR);
 			case NONE -> null;
 		};
 	}
 
 	/**
-	 * Appends a small colored marker after a highlighted player's in-world nametag, instead of
-	 * overwriting the whole name's style - Hypixel bakes rank color (MVP+/VIP/etc.) into the name
-	 * via the scoreboard team style, and flattening the whole component to one color would wipe
-	 * that out. (The Tab-list version, {@link #colorizeTabListName}, deliberately does the opposite -
-	 * see its own doc comment.)
+	 * Appends a real heart icon after a highlighted player's in-world nametag, instead of overwriting
+	 * the whole name's style - Hypixel bakes rank color (MVP+/VIP/etc.) into the name via the
+	 * scoreboard team style, and flattening the whole component to one color would wipe that out.
+	 * (The Tab-list version, {@link #colorizeTabListName}, deliberately does the opposite - see its
+	 * own doc comment.)
 	 */
 	public static Component colorizeName(Player player, Component original) {
-		Category category = classify(player.getUUID());
+		UUID uuid = player.getUUID();
+		Category category = classify(uuid);
 		if (category == Category.NONE) {
 			return original;
 		}
-		TextColor color = TextColor.fromRgb((category == Category.STAFF ? STAFF_COLOR : PARTY_COLOR) & 0xFFFFFF);
+		int rawColor = applyBlinkOverride(uuid, category, category == Category.STAFF ? STAFF_COLOR : PARTY_COLOR);
+		TextColor color = TextColor.fromRgb(rawColor & 0xFFFFFF);
+		MutableComponent fallback = Component.literal("♥").setStyle(Style.EMPTY);
+		MutableComponent icon = MutableComponent.create(new ObjectContents(new AtlasSprite(AtlasIds.GUI, HEART_SPRITE), Optional.of(fallback)));
+		icon.setStyle(Style.EMPTY.withColor(color));
 		MutableComponent copy = original.copy();
-		copy.append(Component.literal(" ♥").withStyle(Style.EMPTY.withColor(color)));
+		copy.append(Component.literal(" ").withStyle(Style.EMPTY)).append(icon);
 		return copy;
 	}
 
