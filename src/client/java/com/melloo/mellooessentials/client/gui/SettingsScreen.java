@@ -127,6 +127,10 @@ public class SettingsScreen extends Screen {
 		switch (currentTab) {
 			case GENERAL -> {
 				rows.add(infoRow("Party and team highlighting are always active."));
+				rows.add(headerRow("Friend Highlighting"));
+				rows.add(highlightColorRow("Friend Highlighting", () -> c.friendHighlightEnabled, v -> c.friendHighlightEnabled = v,
+						() -> c.friendGlowOutlineEnabled, v -> c.friendGlowOutlineEnabled = v,
+						() -> c.friendHighlightColor, v -> c.friendHighlightColor = v));
 				rows.add(headerRow("HUD"));
 				rows.add(boolRow("Player Info HUD (FPS/ping/TPS/server/area/coords/facing)", () -> c.playerInfoHudEnabled, v -> c.playerInfoHudEnabled = v));
 				rows.add(boolRow("Connection Status HUD (sky.melloo.me)", () -> c.connectionStatusHudEnabled, v -> c.connectionStatusHudEnabled = v));
@@ -310,6 +314,14 @@ public class SettingsScreen extends Screen {
 	/** A clickable label row with no toggle state of its own - just runs an action, see BulkCosmeticScreen. */
 	private RowFactory actionRow(String label, Runnable action) {
 		return (x, y, w, h) -> new ActionRowWidget(x, y, w, h, label, action);
+	}
+
+	/** Opens {@link HighlightColorScreen} - a plain enabled/outline/color popup, no particle-kind concept at all (unlike the cosmetic rows below). */
+	private RowFactory highlightColorRow(String label, BooleanSupplier getter, Consumer<Boolean> setter,
+			BooleanSupplier outlineGetter, Consumer<Boolean> outlineSetter,
+			java.util.function.Supplier<java.awt.Color> colorGetter, Consumer<java.awt.Color> colorSetter) {
+		return (x, y, w, h) -> new BoolRowWidget(x, y, w, h, label, getter, setter,
+				() -> Minecraft.getInstance().setScreen(new HighlightColorScreen(this, label, getter, setter, outlineGetter, outlineSetter, colorGetter, colorSetter)));
 	}
 
 	/** Color-capable - also gets a particle-kind cycle (with a "Default (Color)" entry) alongside the color grid, see CosmeticEditScreen. */

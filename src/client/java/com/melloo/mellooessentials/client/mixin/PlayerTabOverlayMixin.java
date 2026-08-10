@@ -43,7 +43,7 @@ public abstract class PlayerTabOverlayMixin {
 	@Inject(method = "getNameForDisplay", at = @At("RETURN"), cancellable = true)
 	private void mellooessentials$colorizeTabName(PlayerInfo playerInfo, CallbackInfoReturnable<Component> cir) {
 		UUID uuid = playerInfo.getProfile().id();
-		Component colorized = HighlightManager.colorizeTabListName(uuid, cir.getReturnValue());
+		Component colorized = HighlightManager.colorizeTabListName(uuid, playerInfo.getProfile().name(), cir.getReturnValue());
 		boolean isModUser = ModMarkerManager.isModUser(uuid);
 		if (isModUser) {
 			Identifier sprite = PresenceManager.isSkyMelloo(uuid) ? PINK_DYE_SPRITE : LIGHT_BLUE_DYE_SPRITE;

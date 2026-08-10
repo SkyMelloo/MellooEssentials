@@ -83,6 +83,21 @@ public final class EssentialsConfig {
 	public int hudConnectionStatusX = -1;
 	public int hudConnectionStatusY = -1;
 
+	// ---- Friend Highlighting ----
+	// Moved here from SkyMelloo (its own "Player Highlighting"/"SkyMelloo Friend Color"/"Player Glow
+	// Outline" settings) - staff/party highlighting live here already and are fixed, not user-
+	// adjustable; friend highlighting stays configurable since "which color represents MY friends to
+	// ME" is a legitimate personal preference, unlike staff/party which are shared facts nobody should
+	// be able to fake/hide. See highlight.HighlightManager.
+
+	public boolean friendHighlightEnabled = false;
+	public java.awt.Color friendHighlightColor = new java.awt.Color(0xFF55FFFF, true);
+	// Off by default, same reasoning SkyMelloo's own version had: forcing the glow-outline (visible
+	// through walls) on every friend can hide cosmetic layers from mods like Lunar Client (capes/
+	// wings) for some players - the colored nametag marker alone already gives a see-through
+	// indicator on its own.
+	public boolean friendGlowOutlineEnabled = false;
+
 	// ---- Cloud Sync ----
 	// Same reasoning/architecture as SkyMelloo's own cloudSyncEnabled - see CloudSyncManager's doc
 	// comment. On by default so HUD positions (the original motivation for this - Lunar Client

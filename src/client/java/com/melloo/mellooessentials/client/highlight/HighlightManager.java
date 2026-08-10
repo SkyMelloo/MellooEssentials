@@ -1,6 +1,8 @@
 package com.melloo.mellooessentials.client.highlight;
 
+import com.melloo.mellooessentials.client.config.EssentialsConfig;
 import com.melloo.mellooessentials.client.party.PartyTracker;
+import com.melloo.mellooessentials.client.social.FriendsManager;
 import com.melloo.mellooessentials.client.social.PresenceManager;
 import net.minecraft.data.AtlasIds;
 import net.minecraft.network.chat.Component;
@@ -19,11 +21,14 @@ import java.util.function.BiFunction;
 
 /**
  * Decides which players get the forced-glow highlight treatment (in-world nametag + Tab-list row).
- * Both colors are fixed, not user-adjustable - party is always light blue, sky.melloo.me team
- * members (any role at all - contributor/admin/moderator/etc, resolved server-side via
+ * Staff and party colors are fixed, not user-adjustable - party is always light blue, sky.melloo.me
+ * team members (any role at all - contributor/admin/moderator/etc, resolved server-side via
  * {@link PresenceManager}, never something a player could fake for themselves) are always pink.
- * Staff takes priority over party for someone who's both. Classification is keyed by UUID, not a
- * loaded {@link Entity} - the Tab-list can show a player who isn't even in render distance.
+ * Friend highlighting (see {@link EssentialsConfig#friendHighlightEnabled}) is the one category that
+ * stays user-configurable - unlike staff/party, "which color represents MY friends to ME" is a
+ * legitimate personal preference, not a shared fact. Priority when someone matches more than one
+ * category: staff > party > friend. Classification is keyed by UUID, not a loaded {@link Entity} -
+ * the Tab-list can show a player who isn't even in render distance.
  */
 public final class HighlightManager {
 	// The same accent blue used for every bordered popup panel across both this mod (SettingsScreen,
@@ -39,7 +44,7 @@ public final class HighlightManager {
 	private static final Identifier HEART_SPRITE = Identifier.withDefaultNamespace("hud/heart/full");
 
 	private enum Category {
-		STAFF, PARTY, NONE
+		STAFF, PARTY, FRIEND, NONE
 	}
 
 	private HighlightManager() {
@@ -70,41 +75,72 @@ public final class HighlightManager {
 		return replaced != null ? replaced : color;
 	}
 
-	private static Category classify(UUID uuid) {
-		// Staff checked first - always takes priority over party for someone who's both, not
-		// user-configurable either way.
+	/** {@code username} is only needed for the friend check (case-insensitive name match, see FriendsManager) - pass null to skip it (staff/party still resolve fine from uuid alone). */
+	private static Category classify(UUID uuid, String username) {
+		// Staff checked first - always takes priority over party/friend for someone who's more than
+		// one, not user-configurable either way.
 		if (PresenceManager.isStaff(uuid)) {
 			return Category.STAFF;
 		}
 		if (PartyTracker.isMember(uuid)) {
 			return Category.PARTY;
 		}
+		if (username != null && EssentialsConfig.get().friendHighlightEnabled && FriendsManager.isFriend(username)) {
+			return Category.FRIEND;
+		}
 		return Category.NONE;
 	}
 
 	private static Category classify(Entity entity) {
-		return entity instanceof Player player ? classify(player.getUUID()) : Category.NONE;
+		return entity instanceof Player player ? classify(player.getUUID(), player.getName().getString()) : Category.NONE;
 	}
 
+	/** The color a given category renders as, ignoring blink overrides - callers apply those themselves since only some (party) need the uuid for it. */
+	private static int rawColorFor(Category category) {
+		return switch (category) {
+			case STAFF -> STAFF_COLOR;
+			case PARTY -> PARTY_COLOR;
+			case FRIEND -> toRgb(EssentialsConfig.get().friendHighlightColor);
+			case NONE -> PARTY_COLOR; // unreachable - every caller already guards on NONE first
+		};
+	}
+
+	private static int toRgb(java.awt.Color color) {
+		return color.getRGB() | 0xFF000000;
+	}
+
+	/**
+	 * Staff/party always force the real glow outline (visible through walls) - that's the whole point
+	 * for a shared team fact. Friend highlighting keeps its own opt-in toggle instead (see
+	 * {@link EssentialsConfig#friendGlowOutlineEnabled}): forcing it by default can hide cosmetic
+	 * layers from mods like Lunar Client for some players, and the colored nametag marker alone
+	 * already gives a see-through indicator without that tradeoff.
+	 */
 	public static boolean shouldGlow(Entity entity) {
-		return classify(entity) != Category.NONE;
+		Category category = classify(entity);
+		if (category == Category.NONE) {
+			return false;
+		}
+		if (category == Category.FRIEND) {
+			return EssentialsConfig.get().friendGlowOutlineEnabled;
+		}
+		return true;
 	}
 
 	public static int getGlowColor(Entity entity) {
 		Category category = classify(entity);
-		int base = category == Category.STAFF ? STAFF_COLOR : PARTY_COLOR;
+		int base = rawColorFor(category);
 		UUID uuid = entity instanceof Player player ? player.getUUID() : null;
 		return uuid != null ? applyBlinkOverride(uuid, category, base) : base;
 	}
 
-	/** The fixed ARGB color this UUID's Tab-list row/nametag should be forced to, or {@code null} if neither staff nor party. */
-	public static Integer getFixedColor(UUID uuid) {
-		Category category = classify(uuid);
-		return switch (category) {
-			case STAFF -> STAFF_COLOR;
-			case PARTY -> applyBlinkOverride(uuid, category, PARTY_COLOR);
-			case NONE -> null;
-		};
+	/** The fixed ARGB color this UUID's Tab-list row/nametag should be forced to, or {@code null} if none of staff/party/friend apply. */
+	public static Integer getFixedColor(UUID uuid, String username) {
+		Category category = classify(uuid, username);
+		if (category == Category.NONE) {
+			return null;
+		}
+		return applyBlinkOverride(uuid, category, rawColorFor(category));
 	}
 
 	/**
@@ -116,11 +152,11 @@ public final class HighlightManager {
 	 */
 	public static Component colorizeName(Player player, Component original) {
 		UUID uuid = player.getUUID();
-		Category category = classify(uuid);
+		Category category = classify(uuid, player.getName().getString());
 		if (category == Category.NONE) {
 			return original;
 		}
-		int rawColor = applyBlinkOverride(uuid, category, category == Category.STAFF ? STAFF_COLOR : PARTY_COLOR);
+		int rawColor = applyBlinkOverride(uuid, category, rawColorFor(category));
 		TextColor color = TextColor.fromRgb(rawColor & 0xFFFFFF);
 		MutableComponent fallback = Component.literal("♥").setStyle(Style.EMPTY);
 		MutableComponent icon = MutableComponent.create(new ObjectContents(new AtlasSprite(AtlasIds.GUI, HEART_SPRITE), Optional.of(fallback)));
@@ -135,8 +171,8 @@ public final class HighlightManager {
 	 * formatting entirely (re-literalized from the plain text) - unlike the in-world nametag marker
 	 * above, this is meant to take priority over the server's own coloring, not just add to it.
 	 */
-	public static Component colorizeTabListName(UUID uuid, Component original) {
-		Integer color = getFixedColor(uuid);
+	public static Component colorizeTabListName(UUID uuid, String username, Component original) {
+		Integer color = getFixedColor(uuid, username);
 		if (color == null) {
 			return original;
 		}
