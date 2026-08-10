@@ -92,10 +92,6 @@ public final class FriendsManager {
 		return friends.stream().anyMatch(f -> f.username().equalsIgnoreCase(username));
 	}
 
-	public static java.util.Optional<ApiClient.FriendEntry> findFriend(String username) {
-		return friends.stream().filter(f -> f.username().equalsIgnoreCase(username)).findFirst();
-	}
-
 	public static void sendRequest(Minecraft client, String username) {
 		RecentUsernames.record(username);
 		ModAuthManager.getIdentity(client)

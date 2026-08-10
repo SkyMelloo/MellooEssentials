@@ -261,8 +261,4 @@ public class MellooEssentialsClient implements ClientModInitializer {
 		names.addAll(com.melloo.mellooessentials.client.social.RecentUsernames.get());
 		return SharedSuggestionProvider.suggest(names.stream(), builder);
 	}
-
-	public static KeyMapping getOpenSettingsKey() {
-		return openSettingsKey;
-	}
 }
