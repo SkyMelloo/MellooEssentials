@@ -6,7 +6,8 @@
 		"EntityGlowMixin",
 		"EntityDisplayNameMixin",
 		"SetTimePacketMixin",
-		"PlayerTabOverlayMixin"
+		"PlayerTabOverlayMixin",
+		"TitleBackgroundMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
