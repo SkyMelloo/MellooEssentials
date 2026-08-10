@@ -22,6 +22,7 @@ import com.melloo.mellooessentials.client.util.CloudSyncManager;
 import com.melloo.mellooessentials.client.util.HypixelDetector;
 import com.melloo.mellooessentials.client.util.ServerPingMonitor;
 import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
@@ -172,6 +173,40 @@ public class MellooEssentialsClient implements ClientModInitializer {
 										}));
 								return 1;
 							}))
+							// Admin account verification - moved here from SkyMelloo's own "/skymelloo
+							// verify", since the server-side check is mod-agnostic (any mod's valid signature
+							// works) and this is the shared core mod SkyMelloo depends on anyway.
+							.then(ClientCommands.literal("verify")
+									.executes(ctx -> {
+										ctx.getSource().sendFeedback(ChatUtil.prefixed("§cUsage: §f/me verify <code>"));
+										return 1;
+									})
+									.then(ClientCommands.argument("code", StringArgumentType.word()).executes(ctx -> {
+										String code = StringArgumentType.getString(ctx, "code");
+										var source = ctx.getSource();
+										Minecraft client = Minecraft.getInstance();
+										if (client.player == null) {
+											return 1;
+										}
+										source.sendFeedback(ChatUtil.prefixed("Checking code..."));
+										ModAuthManager.getIdentity(client).thenCompose(identity -> ApiClient.verifyAccount(code, identity))
+												.whenComplete((result, error) ->
+														Minecraft.getInstance().execute(() -> {
+															Minecraft c = Minecraft.getInstance();
+															if (c.player == null) {
+																return;
+															}
+															if (error != null) {
+																c.player.sendSystemMessage(ChatUtil.prefixed("§cConnection failed: " + ChatUtil.friendlyError(error)));
+															} else if (result.ok()) {
+																c.player.sendSystemMessage(ChatUtil.prefixed("§aAccount linked! You're now an admin on sky.melloo.me."));
+															} else {
+																c.player.sendSystemMessage(ChatUtil.prefixed("§cFailed: " + result.error()));
+															}
+														})
+												);
+										return 1;
+									})))
 			);
 			dispatcher.register(ClientCommands.literal("me").redirect(mellooessentialsNode));
 		});
@@ -183,6 +218,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials chat party <msg>§7/§achat <name> <msg> §7- relay chat (party or direct)"));
 		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials hitstaff §7- staff you've encountered before"));
 		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials block <name>§7/§aunblock <name> §7- block a party member (auto-kick)"));
+		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials verify <code> §7- link your account to sky.melloo.me (admin)"));
 	}
 
 	/** Rough "X ago" duration for /me hitstaff - coarsest unit only (a last-seen from 2 days ago doesn't need minute precision). */

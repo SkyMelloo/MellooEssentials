@@ -163,6 +163,20 @@ public final class ApiClient {
 				.thenApply(root -> new SessionResult(root.get("expiresAt").getAsLong()));
 	}
 
+	// ---- admin account verification (moved here from SkyMelloo's own "/skymelloo verify") ----
+
+	public record VerifyResult(boolean ok, String error) {
+	}
+
+	/** Completes the admin account-linking flow: the admin generated {@code code} on sky.melloo.me/set, this proves (via the signed request) the in-game account owns it. Server-side is mod-agnostic - any mod's valid signature works, same as every other /mod/* route. */
+	public static CompletableFuture<VerifyResult> verifyAccount(String code, ModAuthManager.ModIdentity identity) {
+		JsonObject body = new JsonObject();
+		body.addProperty("code", code);
+		return postJson("/mod/verify", body, identity)
+				.thenApply(root -> new VerifyResult(true, null))
+				.exceptionally(error -> new VerifyResult(false, com.melloo.mellooessentials.client.util.ChatUtil.friendlyError(error)));
+	}
+
 	// ---- presence (cosmetics sync + role lookup) ----
 
 	/** cosmetics: e.g. "halo:AA33FF" (custom color) or "cherryBlossom" (default color) - see PresenceManager. role is sky.melloo.me's server-resolved team role ("owner"/"admin"/"developer"/"moderator"), or null. skymelloo is true if this uuid has also reported presence via SkyMelloo's own client recently (server tells the two mod clients apart by which of X-SkyMelloo-Client/X-MellooEssentials-Client header showed up on the report) - this is the actual signal the mod-user marker's pink/light-blue choice is based on, see PresenceManager#isSkyMelloo. */
