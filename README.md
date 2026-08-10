@@ -32,13 +32,17 @@ it isn't an official release - see Building below to make your own from this sou
 Requires JDK 25.
 
 ```
-./gradlew build -PtestBuild=true                # test build, no key or changelog needed
-./gradlew build -PchangelogFile=path.txt   # dev build, needs the signing key + a changelog
+node scripts/build.js
 ```
 
-The build also runs `reportBuild`/`uploadJar` for sky.melloo.me release tracking - these fail
-silently without the maintainer's own tokens, which live outside this repo. Test builds are
-shareable - this is AGPL-3.0.
+Asks a couple of questions and runs Gradle for you. Prefer raw Gradle directly?
+
+```
+./gradlew build -PtestBuild=true                # unsigned test build, no key or changelog needed
+./gradlew build -PchangelogFile=path.txt   # signed build, requires a private key you won't have
+```
+
+A test build is fully functional and shareable - this is AGPL-3.0.
 
 ## Community
 
