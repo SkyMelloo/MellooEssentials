@@ -18,6 +18,7 @@ import com.melloo.mellooessentials.client.social.PresenceManager;
 import com.melloo.mellooessentials.client.social.RelayChatManager;
 import com.melloo.mellooessentials.client.social.StaffEncounterTracker;
 import com.melloo.mellooessentials.client.util.ChatUtil;
+import com.melloo.mellooessentials.client.util.CloudSyncManager;
 import com.melloo.mellooessentials.client.util.HypixelDetector;
 import com.melloo.mellooessentials.client.util.ServerPingMonitor;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -110,6 +111,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 			FriendsManager.tick(client);
 			RelayChatManager.tick(client);
 			StaffEncounterTracker.tick(client);
+			CloudSyncManager.pullIfNeeded(client);
 
 			// Everything else is Hypixel-only - no reason to run party tracking/cosmetics/presence on
 			// any other server.

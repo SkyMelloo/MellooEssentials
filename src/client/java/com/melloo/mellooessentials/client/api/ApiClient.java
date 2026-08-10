@@ -13,7 +13,9 @@ import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -325,6 +327,48 @@ public final class ApiClient {
 			}
 			return result;
 		}).exceptionally(error -> List.of());
+	}
+
+	// -------------------------------------------------------------------------------------------
+	// Account permissions + Cloud Sync - /mod/permissions is the same account-linked check SkyMelloo
+	// uses, keyed only by the Minecraft account behind the identity, nothing mod-specific about it.
+	// /mod/settings IS mod-specific (the server tells this mod's settings blob apart from SkyMelloo's
+	// own the same way it tells presence reports apart - by which of X-SkyMelloo-Client/
+	// X-MellooEssentials-Client showed up on the request), so the two mods' Cloud Sync never collide
+	// even though both call this same path.
+	// -------------------------------------------------------------------------------------------
+
+	public static CompletableFuture<Map<String, Boolean>> fetchPermissions(ModAuthManager.ModIdentity identity) {
+		return getJson("/mod/permissions", identity).thenApply(root -> {
+			Map<String, Boolean> result = new HashMap<>();
+			for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
+				if (entry.getValue().isJsonPrimitive() && entry.getValue().getAsJsonPrimitive().isBoolean()) {
+					result.put(entry.getKey(), entry.getValue().getAsBoolean());
+				}
+			}
+			return result;
+		});
+	}
+
+	public record CloudSettingsResult(JsonObject settings) {
+	}
+
+	/** The cloud-synced settings blob for the account behind this identity, or null if nothing's been saved yet (or the request failed). */
+	public static CompletableFuture<CloudSettingsResult> fetchCloudSettings(ModAuthManager.ModIdentity identity) {
+		return getJson("/mod/settings", identity)
+				.thenApply(root -> root.has("settings") && root.get("settings").isJsonObject()
+						? new CloudSettingsResult(root.getAsJsonObject("settings"))
+						: null)
+				.exceptionally(error -> null);
+	}
+
+	/** Saves the current settings for cloud sync - a failure here just means the next sync attempt tries again. Returns whether it actually succeeded, for debug logging. */
+	public static CompletableFuture<Boolean> pushCloudSettings(ModAuthManager.ModIdentity identity, JsonObject settings) {
+		JsonObject body = new JsonObject();
+		body.add("settings", settings);
+		return postJson("/mod/settings", body, identity)
+				.thenApply(root -> true)
+				.exceptionally(error -> false);
 	}
 
 	// -------------------------------------------------------------------------------------------

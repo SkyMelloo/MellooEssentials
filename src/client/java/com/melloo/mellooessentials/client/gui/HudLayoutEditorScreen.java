@@ -1,6 +1,7 @@
 package com.melloo.mellooessentials.client.gui;
 
 import com.melloo.mellooessentials.client.config.EssentialsConfig;
+import com.melloo.mellooessentials.client.util.CloudSyncManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -142,6 +143,7 @@ public class HudLayoutEditorScreen extends Screen {
 		if (extraSave != null) {
 			extraSave.run();
 		}
+		CloudSyncManager.push(Minecraft.getInstance());
 		super.onClose();
 	}
 

@@ -83,6 +83,14 @@ public final class EssentialsConfig {
 	public int hudConnectionStatusX = -1;
 	public int hudConnectionStatusY = -1;
 
+	// ---- Cloud Sync ----
+	// Same reasoning/architecture as SkyMelloo's own cloudSyncEnabled - see CloudSyncManager's doc
+	// comment. On by default so HUD positions (the original motivation for this - Lunar Client
+	// profiles each have their own separate config file, so a position set in one profile never
+	// showed up in another) and cosmetics carry over automatically for a linked account.
+
+	public boolean cloudSyncEnabled = true;
+
 	// ---- Cosmetics ----
 	// Same effect set/defaults as SkyMelloo's CosmeticsRenderer. Visible to other Hypixel
 	// Essentials (or SkyMelloo) users nearby - presence sync is always on, see PresenceManager.

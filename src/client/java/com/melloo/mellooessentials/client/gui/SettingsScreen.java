@@ -1,6 +1,7 @@
 package com.melloo.mellooessentials.client.gui;
 
 import com.melloo.mellooessentials.client.config.EssentialsConfig;
+import com.melloo.mellooessentials.client.util.CloudSyncManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -35,7 +36,7 @@ public class SettingsScreen extends Screen {
 	private static final int PANEL_COLOR = 0x99101018; // translucent - the game world stays visible behind the panel
 
 	private enum Tab {
-		GENERAL("General"), COSMETICS("Cosmetics");
+		GENERAL("General"), COSMETICS("Cosmetics"), CLOUD("Cloud");
 
 		final String label;
 
@@ -185,6 +186,13 @@ public class SettingsScreen extends Screen {
 				rows.add(colorCosmeticRow("Physics Cape", "physicsCape", () -> c.physicsCapeEnabled, v -> c.physicsCapeEnabled = v, () -> c.physicsCapeColor, v -> c.physicsCapeColor = v, () -> c.physicsCapeParticleKind, v -> c.physicsCapeParticleKind = v));
 				rows.add(colorCosmeticRow("Cloak", "cloak", () -> c.cloakEnabled, v -> c.cloakEnabled = v, () -> c.cloakColor, v -> c.cloakColor = v, () -> c.cloakParticleKind, v -> c.cloakParticleKind = v));
 			}
+			case CLOUD -> {
+				rows.add(infoRow("Sync HUD positions and cosmetics to sky.melloo.me."));
+				rows.add(infoRow("Requires a linked account - see /me link."));
+				rows.add(boolRow("Cloud Sync", () -> c.cloudSyncEnabled, v -> c.cloudSyncEnabled = v));
+				rows.add(actionRow("Push Now", () -> CloudSyncManager.push(Minecraft.getInstance())));
+				rows.add(actionRow("Pull Now", () -> CloudSyncManager.forcePull(Minecraft.getInstance(), this::refreshAfterChildClosed)));
+			}
 		}
 		rebuildRows();
 	}
@@ -247,6 +255,15 @@ public class SettingsScreen extends Screen {
 	public void onClose() {
 		EssentialsConfig.save();
 		Minecraft.getInstance().setScreen(parent);
+	}
+
+	@Override
+	public void removed() {
+		// Fires regardless of close path (ESC via onClose, the Done button, or the SkyMelloo Config
+		// button below all just call Minecraft#setScreen, which invokes this on the outgoing screen) -
+		// covers essentially every real settings change with one hook.
+		CloudSyncManager.push(Minecraft.getInstance());
+		super.removed();
 	}
 
 	/** Called by CosmeticEditScreen when it closes, so the list redraws with any change immediately. */
