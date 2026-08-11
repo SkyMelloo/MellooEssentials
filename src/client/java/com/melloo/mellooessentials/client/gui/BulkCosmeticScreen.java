@@ -2,6 +2,7 @@ package com.melloo.mellooessentials.client.gui;
 
 import com.melloo.mellooessentials.client.config.EssentialsConfig;
 import com.melloo.mellooessentials.client.cosmetics.ParticleKind;
+import com.melloo.mellooessentials.client.util.Lang;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -34,7 +35,7 @@ public class BulkCosmeticScreen extends Screen {
 	private String selectedParticleKind = null; // local cycle state, not read from config - there's no single "current" value across every cosmetic
 
 	public BulkCosmeticScreen(SettingsScreen parent, boolean colorMode) {
-		super(Component.literal(colorMode ? "Set All Colors" : "Set All Particle Kinds"));
+		super(Lang.c(colorMode ? "mellooessentials.gui.bulk_cosmetic.title_colors" : "mellooessentials.gui.bulk_cosmetic.title_particles"));
 		this.parent = parent;
 		this.colorMode = colorMode;
 	}
@@ -73,7 +74,7 @@ public class BulkCosmeticScreen extends Screen {
 			addRenderableWidget(new ParticleCycleWidget(px + 12, py + 30, PANEL_WIDTH - 24, 20));
 		}
 
-		addRenderableWidget(new SettingsScreen.StyledButton(px + (PANEL_WIDTH - 80) / 2, py + panelHeight() - 26, 80, 20, "Close", 0xFF55FF55, this::close));
+		addRenderableWidget(new SettingsScreen.StyledButton(px + (PANEL_WIDTH - 80) / 2, py + panelHeight() - 26, 80, 20, Lang.s("mellooessentials.gui.common.close"), 0xFF55FF55, this::close));
 	}
 
 	private void close() {
@@ -140,7 +141,7 @@ public class BulkCosmeticScreen extends Screen {
 		private final List<String> options = new ArrayList<>();
 
 		ParticleCycleWidget(int x, int y, int w, int h) {
-			super(x, y, w, h, Component.literal("Particle"));
+			super(x, y, w, h, Lang.c("mellooessentials.gui.common.particle"));
 			options.add(null);
 			for (ParticleKind kind : ParticleKind.values()) {
 				options.add(kind.name());
@@ -149,9 +150,9 @@ public class BulkCosmeticScreen extends Screen {
 
 		private String currentLabel() {
 			if (selectedParticleKind == null) {
-				return "Default (each cosmetic's own look)";
+				return Lang.s("mellooessentials.gui.bulk_cosmetic.default_each");
 			}
-			return ParticleKind.byNameOr(selectedParticleKind, ParticleKind.values()[0]).label;
+			return ParticleKind.byNameOr(selectedParticleKind, ParticleKind.values()[0]).label();
 		}
 
 		@Override
@@ -159,7 +160,7 @@ public class BulkCosmeticScreen extends Screen {
 			if (this.isHovered()) {
 				gg.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), 0x14FFFFFF);
 			}
-			String text = "Particle: " + currentLabel() + "  (click to cycle)";
+			String text = Lang.s("mellooessentials.gui.particle_cycle.label", currentLabel());
 			gg.text(Minecraft.getInstance().font, text, getX() + 2, getY() + (getHeight() - 8) / 2, 0xFFFFFFFF);
 		}
 

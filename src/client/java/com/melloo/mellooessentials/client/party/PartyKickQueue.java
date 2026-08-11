@@ -1,12 +1,12 @@
 package com.melloo.mellooessentials.client.party;
 
 import com.melloo.mellooessentials.client.util.ChatUtil;
+import com.melloo.mellooessentials.client.util.Lang;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.ClickEvent;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 
@@ -114,23 +114,23 @@ public final class PartyKickQueue {
 		if (BlockedUsersManager.isBlocked(username)) {
 			if (PartyTracker.isLocalPlayerLeader()) {
 				queueKick(username);
-				client.player.sendSystemMessage(ChatUtil.prefixed("§cAuto-kicked blocked user §f" + username + "§c who joined your party."));
+				client.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.party.auto_kicked", username)));
 			}
 			return;
 		}
-		MutableComponent line = Component.literal("§d" + username + " §7joined your party. ");
+		MutableComponent line = Lang.c("mellooessentials.chat.party.joined", username);
 		if (PartyTracker.isLocalPlayerLeader()) {
-			line = line.append(Component.literal("[Kick] ").withStyle(style -> style
+			line = line.append(Lang.c("mellooessentials.gui.party.kick_button").withStyle(style -> style
 					.withColor(ChatFormatting.RED)
 					.withBold(true)
 					.withClickEvent(new ClickEvent.RunCommand("/party kick " + username))
-					.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to kick " + username)))));
+					.withHoverEvent(new HoverEvent.ShowText(Lang.c("mellooessentials.tooltip.party.kick", username)))));
 		}
-		line = line.append(Component.literal("[Block]").withStyle(style -> style
+		line = line.append(Lang.c("mellooessentials.gui.party.block_button").withStyle(style -> style
 				.withColor(ChatFormatting.DARK_RED)
 				.withBold(true)
 				.withClickEvent(new ClickEvent.RunCommand("/me block " + username))
-				.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to block " + username + " - auto-kicks them from any party you lead from now on")))));
+				.withHoverEvent(new HoverEvent.ShowText(Lang.c("mellooessentials.tooltip.party.block", username)))));
 		BiFunction<String, MutableComponent, MutableComponent> extra = extraJoinAction;
 		if (extra != null) {
 			line = extra.apply(username, line);

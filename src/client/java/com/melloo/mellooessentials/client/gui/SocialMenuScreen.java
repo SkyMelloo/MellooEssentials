@@ -2,12 +2,12 @@ package com.melloo.mellooessentials.client.gui;
 
 import com.melloo.mellooessentials.client.api.ApiClient;
 import com.melloo.mellooessentials.client.social.FriendsManager;
+import com.melloo.mellooessentials.client.util.Lang;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 
 import java.util.ArrayList;
@@ -51,7 +51,7 @@ public class SocialMenuScreen extends Screen {
 	private int lastRequestsHash;
 
 	public SocialMenuScreen() {
-		super(Component.literal("Social"));
+		super(Lang.c("mellooessentials.gui.social.title"));
 	}
 
 	@Override
@@ -101,16 +101,16 @@ public class SocialMenuScreen extends Screen {
 
 		buildFriendsColumn(x, top);
 
-		addRenderableWidget(new SettingsScreen.StyledButton(this.width / 2 - 40, this.height - 28, 80, 20, "Done", BLUE, this::onClose));
+		addRenderableWidget(new SettingsScreen.StyledButton(this.width / 2 - 40, this.height - 28, 80, 20, Lang.s("mellooessentials.gui.common.done"), BLUE, this::onClose));
 	}
 
 	private void buildFriendsColumn(int x, int top) {
 		int y = top;
-		addFriendBox = new EditBox(this.font, x, y, COLUMN_WIDTH - 60, 18, Component.literal("Add friend"));
-		addFriendBox.setHint(Component.literal("Add friend..."));
+		addFriendBox = new EditBox(this.font, x, y, COLUMN_WIDTH - 60, 18, Lang.c("mellooessentials.gui.social.add_friend_label"));
+		addFriendBox.setHint(Lang.c("mellooessentials.gui.social.add_friend_placeholder"));
 		addFriendBox.setTextColor(0xFFB6E6FF);
 		addRenderableWidget(addFriendBox);
-		addRenderableWidget(new SettingsScreen.StyledButton(x + COLUMN_WIDTH - 55, y, 55, 18, "Add", BLUE, () -> {
+		addRenderableWidget(new SettingsScreen.StyledButton(x + COLUMN_WIDTH - 55, y, 55, 18, Lang.s("mellooessentials.gui.common.add"), BLUE, () -> {
 			String name = addFriendBox.getValue().trim();
 			if (!name.isEmpty()) {
 				FriendsManager.sendRequest(Minecraft.getInstance(), name);
@@ -127,7 +127,7 @@ public class SocialMenuScreen extends Screen {
 			}
 			addRenderableWidget(new SettingsScreen.StyledButton(x + COLUMN_WIDTH - 44, y, 20, 18, "✓", GREEN, () -> FriendsManager.accept(Minecraft.getInstance(), request.username())));
 			addRenderableWidget(new SettingsScreen.StyledButton(x + COLUMN_WIDTH - 22, y, 20, 18, "✕", RED, () -> FriendsManager.decline(Minecraft.getInstance(), request.username())));
-			labels.add(new Label("§b" + request.username() + " §7(request)", x + TEXT_X_OFFSET, y + (FACE_SIZE - 8) / 2));
+			labels.add(new Label(Lang.s("mellooessentials.gui.social.request_suffix", request.username()), x + TEXT_X_OFFSET, y + (FACE_SIZE - 8) / 2));
 			y += ROW_HEIGHT;
 		}
 
@@ -137,15 +137,15 @@ public class SocialMenuScreen extends Screen {
 			if (uuid != null) {
 				faces.add(new Face(uuid, x, y));
 			}
-			addRenderableWidget(new SettingsScreen.StyledButton(x + COLUMN_WIDTH - 100, y, 45, 18, "Chat", BLUE, () ->
+			addRenderableWidget(new SettingsScreen.StyledButton(x + COLUMN_WIDTH - 100, y, 45, 18, Lang.s("mellooessentials.gui.common.chat"), BLUE, () ->
 					Minecraft.getInstance().setScreen(new ChatScreen("/me chat " + friend.username() + " ", true))));
-			addRenderableWidget(new SettingsScreen.StyledButton(x + COLUMN_WIDTH - 52, y, 52, 18, "Remove", RED, () -> FriendsManager.remove(Minecraft.getInstance(), friend.username())));
+			addRenderableWidget(new SettingsScreen.StyledButton(x + COLUMN_WIDTH - 52, y, 52, 18, Lang.s("mellooessentials.gui.common.remove"), RED, () -> FriendsManager.remove(Minecraft.getInstance(), friend.username())));
 			labels.add(new Label("§b" + friend.username(), x + TEXT_X_OFFSET, y + (FACE_SIZE - 8) / 2));
 			y += ROW_HEIGHT;
 		}
 
 		if (friends.isEmpty() && requests.isEmpty()) {
-			labels.add(new Label("§7No friends yet.", x, y + 5));
+			labels.add(new Label(Lang.s("mellooessentials.gui.social.no_friends"), x, y + 5));
 		}
 	}
 
@@ -156,8 +156,8 @@ public class SocialMenuScreen extends Screen {
 		int x = this.width / 2 - COLUMN_WIDTH / 2;
 		int top = 46;
 
-		gg.centeredText(this.font, "§bSocial", this.width / 2, 16, 0xFFFFFF);
-		gg.text(this.font, "§dFriends", x, top - 14, 0xFFFFFF);
+		gg.centeredText(this.font, Lang.s("mellooessentials.gui.social.header"), this.width / 2, 16, 0xFFFFFF);
+		gg.text(this.font, Lang.s("mellooessentials.gui.social.friends_header"), x, top - 14, 0xFFFFFF);
 
 		for (Face face : faces) {
 			Identifier texture = RemoteFaceTextureCache.get(face.uuid());

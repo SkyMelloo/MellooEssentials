@@ -4,6 +4,7 @@ import com.melloo.mellooessentials.client.api.ApiClient;
 import com.melloo.mellooessentials.client.api.ModAuthManager;
 import com.melloo.mellooessentials.client.party.PartyTracker;
 import com.melloo.mellooessentials.client.util.ChatUtil;
+import com.melloo.mellooessentials.client.util.Lang;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
@@ -83,7 +84,7 @@ public final class RelayChatManager {
 			// player's name in vanilla chat to /msg them.
 			name.setStyle(Style.EMPTY
 					.withClickEvent(new ClickEvent.SuggestCommand("/me chat " + message.fromUsername() + " "))
-					.withHoverEvent(new HoverEvent.ShowText(Component.literal("Click to reply"))));
+					.withHoverEvent(new HoverEvent.ShowText(Lang.c("mellooessentials.tooltip.chat.reply"))));
 		}
 		client.player.sendSystemMessage(ChatUtil.prefixed(Component.literal(tag).append(name).append(Component.literal("§7: §f" + message.text()))));
 	}
@@ -91,7 +92,7 @@ public final class RelayChatManager {
 	/** Sends a DM - {@code toUsername} must already be a confirmed friend (checked both here for a fast local error, and again server-side regardless). */
 	public static void sendDirect(Minecraft client, String toUsername, String text) {
 		if (!FriendsManager.isFriend(toUsername)) {
-			client.player.sendSystemMessage(ChatUtil.prefixed("§cNot a friend yet - §f/me friend " + toUsername + " §cfirst."));
+			client.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.dm.not_friend", toUsername)));
 			return;
 		}
 		RecentUsernames.record(toUsername);
@@ -102,7 +103,7 @@ public final class RelayChatManager {
 						return;
 					}
 					if (error != null || !Boolean.TRUE.equals(ok)) {
-						client.player.sendSystemMessage(ChatUtil.prefixed("§cCouldn't send - they may not be online right now."));
+						client.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.dm.send_failed")));
 						return;
 					}
 					client.player.sendSystemMessage(ChatUtil.prefixed("§d[DM → " + toUsername + "] §7: §f" + text));
@@ -122,7 +123,7 @@ public final class RelayChatManager {
 				.map(UUID::toString)
 				.toList();
 		if (recipients.isEmpty()) {
-			client.player.sendSystemMessage(ChatUtil.prefixed("§7Nobody else in your party is running this mod right now."));
+			client.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.party.nobody_running_mod")));
 			return;
 		}
 		String selfName = client.player.getGameProfile().name();
@@ -133,7 +134,7 @@ public final class RelayChatManager {
 						return;
 					}
 					if (error != null || !Boolean.TRUE.equals(ok)) {
-						client.player.sendSystemMessage(ChatUtil.prefixed("§cCouldn't send to party."));
+						client.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.party.send_failed")));
 						return;
 					}
 					client.player.sendSystemMessage(ChatUtil.prefixed("§d[Party] §b" + selfName + "§7: §f" + text));
@@ -173,7 +174,7 @@ public final class RelayChatManager {
 	public static LiteralArgumentBuilder<FabricClientCommandSource> buildChatCommand() {
 		return ClientCommands.literal("chat")
 				.executes(ctx -> {
-					ctx.getSource().sendFeedback(ChatUtil.prefixed("§cUsage: §f/me chat party <message>§7 or §f/me chat <name> <message>"));
+					ctx.getSource().sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.chat.usage")));
 					return 1;
 				})
 				.then(ClientCommands.literal("party")

@@ -2,6 +2,7 @@ package com.melloo.mellooessentials.client.social;
 
 import com.melloo.mellooessentials.client.api.ModAuthManager;
 import com.melloo.mellooessentials.client.config.EssentialsConfig;
+import com.melloo.mellooessentials.client.util.Lang;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
@@ -94,18 +95,18 @@ public final class ConnectionStatusHud implements HudElement {
 		int statusColor;
 		switch (ModAuthManager.getConnectionState()) {
 			case CONNECTED -> {
-				headline = "§lConnected" + (isAdmin ? " §d★" : "");
+				headline = "§l" + Lang.s("mellooessentials.hud.connection.connected") + (isAdmin ? " §d★" : "");
 				String duration = formatDuration(System.currentTimeMillis() - ModAuthManager.getConnectedSince());
 				detail = "sky.melloo.me · " + duration + (extra != null ? " · " + extra : "");
 				statusColor = 0xFF55FF55;
 			}
 			case ERROR -> {
-				headline = "§lConnection Failed";
-				detail = "see sky.melloo.me/status" + (extra != null ? " · " + extra : "");
+				headline = "§l" + Lang.s("mellooessentials.hud.connection.failed");
+				detail = Lang.s("mellooessentials.hud.connection.see_status") + (extra != null ? " · " + extra : "");
 				statusColor = 0xFFFF6644;
 			}
 			default -> {
-				headline = "§lConnecting…";
+				headline = "§l" + Lang.s("mellooessentials.hud.connection.connecting");
 				detail = "sky.melloo.me" + (extra != null ? " · " + extra : "");
 				statusColor = 0xFFFFCC00;
 			}

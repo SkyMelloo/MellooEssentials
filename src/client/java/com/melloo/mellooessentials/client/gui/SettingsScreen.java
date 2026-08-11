@@ -2,6 +2,7 @@ package com.melloo.mellooessentials.client.gui;
 
 import com.melloo.mellooessentials.client.config.EssentialsConfig;
 import com.melloo.mellooessentials.client.util.CloudSyncManager;
+import com.melloo.mellooessentials.client.util.Lang;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -36,12 +37,16 @@ public class SettingsScreen extends Screen {
 	private static final int PANEL_COLOR = 0x99101018; // translucent - the game world stays visible behind the panel
 
 	private enum Tab {
-		GENERAL("General"), COSMETICS("Cosmetics"), CLOUD("Cloud");
+		GENERAL("mellooessentials.gui.settings.tab.general"), COSMETICS("mellooessentials.gui.settings.tab.cosmetics"), CLOUD("mellooessentials.gui.settings.tab.cloud");
 
-		final String label;
+		private final String translationKey;
 
-		Tab(String label) {
-			this.label = label;
+		Tab(String translationKey) {
+			this.translationKey = translationKey;
+		}
+
+		String label() {
+			return Lang.s(translationKey);
 		}
 	}
 
@@ -73,7 +78,7 @@ public class SettingsScreen extends Screen {
 	private int scrollOffset = 0;
 
 	public SettingsScreen(Screen parent) {
-		super(Component.literal("MellooEssentials"));
+		super(Lang.c("mellooessentials.gui.settings.title"));
 		this.parent = parent;
 	}
 
@@ -126,76 +131,76 @@ public class SettingsScreen extends Screen {
 		EssentialsConfig c = EssentialsConfig.get();
 		switch (currentTab) {
 			case GENERAL -> {
-				rows.add(infoRow("Party and team highlighting are always active."));
-				rows.add(headerRow("Friend Highlighting"));
-				rows.add(highlightColorRow("Friend Highlighting", () -> c.friendHighlightEnabled, v -> c.friendHighlightEnabled = v,
+				rows.add(infoRow(Lang.s("mellooessentials.gui.settings.general.always_active")));
+				rows.add(headerRow(Lang.s("mellooessentials.gui.settings.friend_highlighting")));
+				rows.add(highlightColorRow(Lang.s("mellooessentials.gui.settings.friend_highlighting"), () -> c.friendHighlightEnabled, v -> c.friendHighlightEnabled = v,
 						() -> c.friendGlowOutlineEnabled, v -> c.friendGlowOutlineEnabled = v,
 						() -> c.friendHighlightColor, v -> c.friendHighlightColor = v));
-				rows.add(headerRow("HUD"));
-				rows.add(boolRow("Player Info HUD (FPS/ping/TPS/server/area/coords/facing)", () -> c.playerInfoHudEnabled, v -> c.playerInfoHudEnabled = v));
-				rows.add(boolRow("Connection Status HUD (sky.melloo.me)", () -> c.connectionStatusHudEnabled, v -> c.connectionStatusHudEnabled = v));
+				rows.add(headerRow(Lang.s("mellooessentials.gui.settings.header.hud")));
+				rows.add(boolRow(Lang.s("mellooessentials.gui.settings.general.player_info_hud"), () -> c.playerInfoHudEnabled, v -> c.playerInfoHudEnabled = v));
+				rows.add(boolRow(Lang.s("mellooessentials.gui.settings.general.connection_status_hud"), () -> c.connectionStatusHudEnabled, v -> c.connectionStatusHudEnabled = v));
 			}
 			case COSMETICS -> {
-				rows.add(boolRow("Cosmetics Enabled (master switch)", () -> c.cosmeticsEnabled, v -> c.cosmeticsEnabled = v));
-				rows.add(actionRow("Set All Colors", () -> Minecraft.getInstance().setScreen(new BulkCosmeticScreen(this, true))));
-				rows.add(actionRow("Set All Particle Kinds", () -> Minecraft.getInstance().setScreen(new BulkCosmeticScreen(this, false))));
-				rows.add(actionRow("Reset All Cosmetics", () -> {
+				rows.add(boolRow(Lang.s("mellooessentials.gui.settings.cosmetics.master_switch"), () -> c.cosmeticsEnabled, v -> c.cosmeticsEnabled = v));
+				rows.add(actionRow(Lang.s("mellooessentials.gui.bulk_cosmetic.title_colors"), () -> Minecraft.getInstance().setScreen(new BulkCosmeticScreen(this, true))));
+				rows.add(actionRow(Lang.s("mellooessentials.gui.bulk_cosmetic.title_particles"), () -> Minecraft.getInstance().setScreen(new BulkCosmeticScreen(this, false))));
+				rows.add(actionRow(Lang.s("mellooessentials.gui.settings.cosmetics.reset_all"), () -> {
 					EssentialsConfig.get().resetAllCosmetics();
 					EssentialsConfig.save();
 				}));
-				rows.add(colorCosmeticRow("Halo", "halo", () -> c.haloEnabled, v -> c.haloEnabled = v, () -> c.haloColor, v -> c.haloColor = v, () -> c.haloParticleKind, v -> c.haloParticleKind = v));
-				rows.add(particleCosmeticRow("Cherry Blossom", "cherryBlossom", () -> c.cherryBlossomEnabled, v -> c.cherryBlossomEnabled = v, () -> c.cherryBlossomParticle, v -> c.cherryBlossomParticle = v));
-				rows.add(colorCosmeticRow("Helix", "rainbowHelix", () -> c.rainbowHelixEnabled, v -> c.rainbowHelixEnabled = v, () -> c.rainbowHelixColor, v -> c.rainbowHelixColor = v, () -> c.rainbowHelixParticleKind, v -> c.rainbowHelixParticleKind = v));
-				rows.add(colorCosmeticRow("Aura", "aura", () -> c.auraEnabled, v -> c.auraEnabled = v, () -> c.auraColor, v -> c.auraColor = v, () -> c.auraParticleKind, v -> c.auraParticleKind = v));
-				rows.add(colorCosmeticRow("Wave", "wave", () -> c.waveEnabled, v -> c.waveEnabled = v, () -> c.waveColor, v -> c.waveColor = v, () -> c.waveParticleKind, v -> c.waveParticleKind = v));
-				rows.add(defaultableParticleCosmeticRow("Rain Cloud", "rainCloud", () -> c.rainCloudEnabled, v -> c.rainCloudEnabled = v, () -> c.rainCloudParticleKind, v -> c.rainCloudParticleKind = v));
-				rows.add(particleCosmeticRow("Fire Ring", "fireRing", () -> c.fireRingEnabled, v -> c.fireRingEnabled = v, () -> c.fireRingParticle, v -> c.fireRingParticle = v));
-				rows.add(particleCosmeticRow("Star Rain", "starRain", () -> c.starRainEnabled, v -> c.starRainEnabled = v, () -> c.starRainParticle, v -> c.starRainParticle = v));
-				rows.add(particleCosmeticRow("Spark Aura", "sparkAura", () -> c.sparkAuraEnabled, v -> c.sparkAuraEnabled = v, () -> c.sparkAuraParticle, v -> c.sparkAuraParticle = v));
-				rows.add(colorCosmeticRow("Lissajous Curve", "lissajous", () -> c.lissajousEnabled, v -> c.lissajousEnabled = v, () -> c.lissajousColor, v -> c.lissajousColor = v, () -> c.lissajousParticleKind, v -> c.lissajousParticleKind = v));
-				rows.add(colorCosmeticRow("Rose Curve", "roseCurve", () -> c.roseCurveEnabled, v -> c.roseCurveEnabled = v, () -> c.roseCurveColor, v -> c.roseCurveColor = v, () -> c.roseCurveParticleKind, v -> c.roseCurveParticleKind = v));
-				rows.add(colorCosmeticRow("Landing Shockwave", "landingShockwave", () -> c.landingShockwaveEnabled, v -> c.landingShockwaveEnabled = v, () -> c.landingShockwaveColor, v -> c.landingShockwaveColor = v, () -> c.landingShockwaveParticleKind, v -> c.landingShockwaveParticleKind = v));
-				rows.add(particleCosmeticRow("Firework Burst", "fireworkBurst", () -> c.fireworkBurstEnabled, v -> c.fireworkBurstEnabled = v, () -> c.fireworkBurstParticle, v -> c.fireworkBurstParticle = v));
-				rows.add(colorCosmeticRow("Frost Aura", "frostAura", () -> c.frostAuraEnabled, v -> c.frostAuraEnabled = v, () -> c.frostAuraColor, v -> c.frostAuraColor = v, () -> c.frostAuraParticleKind, v -> c.frostAuraParticleKind = v));
-				rows.add(particleCosmeticRow("Note Melody", "noteMelody", () -> c.noteMelodyEnabled, v -> c.noteMelodyEnabled = v, () -> c.noteMelodyParticle, v -> c.noteMelodyParticle = v));
-				rows.add(colorCosmeticRow("Portal Vortex", "portalVortex", () -> c.portalVortexEnabled, v -> c.portalVortexEnabled = v, () -> c.portalVortexColor, v -> c.portalVortexColor = v, () -> c.portalVortexParticleKind, v -> c.portalVortexParticleKind = v));
-				rows.add(particleCosmeticRow("Heart Trail", "heartTrail", () -> c.heartTrailEnabled, v -> c.heartTrailEnabled = v, () -> c.heartTrailParticle, v -> c.heartTrailParticle = v));
-				rows.add(colorCosmeticRow("Spiral Galaxy", "spiralGalaxy", () -> c.spiralGalaxyEnabled, v -> c.spiralGalaxyEnabled = v, () -> c.spiralGalaxyColor, v -> c.spiralGalaxyColor = v, () -> c.spiralGalaxyParticleKind, v -> c.spiralGalaxyParticleKind = v));
-				rows.add(colorCosmeticRow("Jump Trail", "jumpTrail", () -> c.jumpTrailEnabled, v -> c.jumpTrailEnabled = v, () -> c.jumpTrailColor, v -> c.jumpTrailColor = v, () -> c.jumpTrailParticleKind, v -> c.jumpTrailParticleKind = v));
-				rows.add(particleCosmeticRow("Totem Flash", "totemFlash", () -> c.totemFlashEnabled, v -> c.totemFlashEnabled = v, () -> c.totemFlashParticle, v -> c.totemFlashParticle = v));
-				rows.add(particleCosmeticRow("Sculk Pulse", "sculkPulse", () -> c.sculkPulseEnabled, v -> c.sculkPulseEnabled = v, () -> c.sculkPulseParticle, v -> c.sculkPulseParticle = v));
-				rows.add(particleCosmeticRow("Omen Aura", "omenAura", () -> c.omenAuraEnabled, v -> c.omenAuraEnabled = v, () -> c.omenAuraParticle, v -> c.omenAuraParticle = v));
-				rows.add(colorCosmeticRow("Gust Aura", "gustAura", () -> c.gustAuraEnabled, v -> c.gustAuraEnabled = v, () -> c.gustAuraColor, v -> c.gustAuraColor = v, () -> c.gustAuraParticleKind, v -> c.gustAuraParticleKind = v));
-				rows.add(colorCosmeticRow("Ash Fall", "ashFall", () -> c.ashFallEnabled, v -> c.ashFallEnabled = v, () -> c.ashFallColor, v -> c.ashFallColor = v, () -> c.ashFallParticleKind, v -> c.ashFallParticleKind = v));
-				rows.add(defaultableParticleCosmeticRow("Campfire Smoke", "campfireSmoke", () -> c.campfireSmokeEnabled, v -> c.campfireSmokeEnabled = v, () -> c.campfireSmokeParticleKind, v -> c.campfireSmokeParticleKind = v));
-				rows.add(colorCosmeticRow("Tornado", "tornado", () -> c.tornadoEnabled, v -> c.tornadoEnabled = v, () -> c.tornadoColor, v -> c.tornadoColor = v, () -> c.tornadoParticleKind, v -> c.tornadoParticleKind = v));
-				rows.add(colorCosmeticRow("Black Hole", "blackHole", () -> c.blackHoleEnabled, v -> c.blackHoleEnabled = v, () -> c.blackHoleColor, v -> c.blackHoleColor = v, () -> c.blackHoleParticleKind, v -> c.blackHoleParticleKind = v));
-				rows.add(colorCosmeticRow("Twin Vortex", "twinVortex", () -> c.twinVortexEnabled, v -> c.twinVortexEnabled = v, () -> c.twinVortexColor, v -> c.twinVortexColor = v, () -> c.twinVortexParticleKind, v -> c.twinVortexParticleKind = v));
-				rows.add(particleCosmeticRow("Enchanted Crit Sparkle", "enchantedCritSparkle", () -> c.enchantedCritSparkleEnabled, v -> c.enchantedCritSparkleEnabled = v, () -> c.enchantedCritSparkleParticle, v -> c.enchantedCritSparkleParticle = v));
-				rows.add(particleCosmeticRow("Dust Plume Trail", "dustPlumeTrail", () -> c.dustPlumeTrailEnabled, v -> c.dustPlumeTrailEnabled = v, () -> c.dustPlumeTrailParticle, v -> c.dustPlumeTrailParticle = v));
-				rows.add(colorCosmeticRow("Charge Up", "chargeUp", () -> c.chargeUpEnabled, v -> c.chargeUpEnabled = v, () -> c.chargeUpColor, v -> c.chargeUpColor = v, () -> c.chargeUpParticleKind, v -> c.chargeUpParticleKind = v));
-				rows.add(colorCosmeticRow("Orbit Rings", "orbitRings", () -> c.orbitRingsEnabled, v -> c.orbitRingsEnabled = v, () -> c.orbitRingsColor, v -> c.orbitRingsColor = v, () -> c.orbitRingsParticleKind, v -> c.orbitRingsParticleKind = v));
-				rows.add(particleCosmeticRow("Lightning Aura", "lightningAura", () -> c.lightningAuraEnabled, v -> c.lightningAuraEnabled = v, () -> c.lightningAuraParticle, v -> c.lightningAuraParticle = v));
-				rows.add(defaultableParticleCosmeticRow("Confetti Burst", "confettiBurst", () -> c.confettiBurstEnabled, v -> c.confettiBurstEnabled = v, () -> c.confettiBurstParticleKind, v -> c.confettiBurstParticleKind = v));
-				rows.add(colorCosmeticRow("Moth Wings", "mothWings", () -> c.mothWingsEnabled, v -> c.mothWingsEnabled = v, () -> c.mothWingsColor, v -> c.mothWingsColor = v, () -> c.mothWingsParticleKind, v -> c.mothWingsParticleKind = v));
-				rows.add(colorCosmeticRow("Phoenix Wings", "phoenixWings", () -> c.phoenixWingsEnabled, v -> c.phoenixWingsEnabled = v, () -> c.phoenixWingsColor, v -> c.phoenixWingsColor = v, () -> c.phoenixWingsParticleKind, v -> c.phoenixWingsParticleKind = v));
-				rows.add(particleCosmeticRow("Void Rift", "voidRift", () -> c.voidRiftEnabled, v -> c.voidRiftEnabled = v, () -> c.voidRiftParticle, v -> c.voidRiftParticle = v));
-				rows.add(particleCosmeticRow("Star Weave", "starWeave", () -> c.starWeaveEnabled, v -> c.starWeaveEnabled = v, () -> c.starWeaveParticle, v -> c.starWeaveParticle = v));
-				rows.add(particleCosmeticRow("Ascending Sparkles", "ascendingSparkles", () -> c.ascendingSparklesEnabled, v -> c.ascendingSparklesEnabled = v, () -> c.ascendingSparklesParticle, v -> c.ascendingSparklesParticle = v));
-				rows.add(particleCosmeticRow("Comet Trail", "cometTrail", () -> c.cometTrailEnabled, v -> c.cometTrailEnabled = v, () -> c.cometTrailParticle, v -> c.cometTrailParticle = v));
-				rows.add(particleCosmeticRow("Star Veil", "starVeil", () -> c.starVeilEnabled, v -> c.starVeilEnabled = v, () -> c.starVeilParticle, v -> c.starVeilParticle = v));
-				rows.add(particleCosmeticRow("Radiant Pulse", "radiantPulse", () -> c.radiantPulseEnabled, v -> c.radiantPulseEnabled = v, () -> c.radiantPulseParticle, v -> c.radiantPulseParticle = v));
-				rows.add(colorCosmeticRow("Pulsing Sphere", "pulsingSphere", () -> c.pulsingSphereEnabled, v -> c.pulsingSphereEnabled = v, () -> c.pulsingSphereColor, v -> c.pulsingSphereColor = v, () -> c.pulsingSphereParticleKind, v -> c.pulsingSphereParticleKind = v));
-				rows.add(colorCosmeticRow("Scanner", "scanner", () -> c.scannerEnabled, v -> c.scannerEnabled = v, () -> c.scannerColor, v -> c.scannerColor = v, () -> c.scannerParticleKind, v -> c.scannerParticleKind = v));
-				rows.add(colorCosmeticRow("Physics Cape", "physicsCape", () -> c.physicsCapeEnabled, v -> c.physicsCapeEnabled = v, () -> c.physicsCapeColor, v -> c.physicsCapeColor = v, () -> c.physicsCapeParticleKind, v -> c.physicsCapeParticleKind = v));
-				rows.add(colorCosmeticRow("Cloak", "cloak", () -> c.cloakEnabled, v -> c.cloakEnabled = v, () -> c.cloakColor, v -> c.cloakColor = v, () -> c.cloakParticleKind, v -> c.cloakParticleKind = v));
+				rows.add(colorCosmeticRow("halo", () -> c.haloEnabled, v -> c.haloEnabled = v, () -> c.haloColor, v -> c.haloColor = v, () -> c.haloParticleKind, v -> c.haloParticleKind = v));
+				rows.add(particleCosmeticRow("cherryBlossom", () -> c.cherryBlossomEnabled, v -> c.cherryBlossomEnabled = v, () -> c.cherryBlossomParticle, v -> c.cherryBlossomParticle = v));
+				rows.add(colorCosmeticRow("rainbowHelix", () -> c.rainbowHelixEnabled, v -> c.rainbowHelixEnabled = v, () -> c.rainbowHelixColor, v -> c.rainbowHelixColor = v, () -> c.rainbowHelixParticleKind, v -> c.rainbowHelixParticleKind = v));
+				rows.add(colorCosmeticRow("aura", () -> c.auraEnabled, v -> c.auraEnabled = v, () -> c.auraColor, v -> c.auraColor = v, () -> c.auraParticleKind, v -> c.auraParticleKind = v));
+				rows.add(colorCosmeticRow("wave", () -> c.waveEnabled, v -> c.waveEnabled = v, () -> c.waveColor, v -> c.waveColor = v, () -> c.waveParticleKind, v -> c.waveParticleKind = v));
+				rows.add(defaultableParticleCosmeticRow("rainCloud", () -> c.rainCloudEnabled, v -> c.rainCloudEnabled = v, () -> c.rainCloudParticleKind, v -> c.rainCloudParticleKind = v));
+				rows.add(particleCosmeticRow("fireRing", () -> c.fireRingEnabled, v -> c.fireRingEnabled = v, () -> c.fireRingParticle, v -> c.fireRingParticle = v));
+				rows.add(particleCosmeticRow("starRain", () -> c.starRainEnabled, v -> c.starRainEnabled = v, () -> c.starRainParticle, v -> c.starRainParticle = v));
+				rows.add(particleCosmeticRow("sparkAura", () -> c.sparkAuraEnabled, v -> c.sparkAuraEnabled = v, () -> c.sparkAuraParticle, v -> c.sparkAuraParticle = v));
+				rows.add(colorCosmeticRow("lissajous", () -> c.lissajousEnabled, v -> c.lissajousEnabled = v, () -> c.lissajousColor, v -> c.lissajousColor = v, () -> c.lissajousParticleKind, v -> c.lissajousParticleKind = v));
+				rows.add(colorCosmeticRow("roseCurve", () -> c.roseCurveEnabled, v -> c.roseCurveEnabled = v, () -> c.roseCurveColor, v -> c.roseCurveColor = v, () -> c.roseCurveParticleKind, v -> c.roseCurveParticleKind = v));
+				rows.add(colorCosmeticRow("landingShockwave", () -> c.landingShockwaveEnabled, v -> c.landingShockwaveEnabled = v, () -> c.landingShockwaveColor, v -> c.landingShockwaveColor = v, () -> c.landingShockwaveParticleKind, v -> c.landingShockwaveParticleKind = v));
+				rows.add(particleCosmeticRow("fireworkBurst", () -> c.fireworkBurstEnabled, v -> c.fireworkBurstEnabled = v, () -> c.fireworkBurstParticle, v -> c.fireworkBurstParticle = v));
+				rows.add(colorCosmeticRow("frostAura", () -> c.frostAuraEnabled, v -> c.frostAuraEnabled = v, () -> c.frostAuraColor, v -> c.frostAuraColor = v, () -> c.frostAuraParticleKind, v -> c.frostAuraParticleKind = v));
+				rows.add(particleCosmeticRow("noteMelody", () -> c.noteMelodyEnabled, v -> c.noteMelodyEnabled = v, () -> c.noteMelodyParticle, v -> c.noteMelodyParticle = v));
+				rows.add(colorCosmeticRow("portalVortex", () -> c.portalVortexEnabled, v -> c.portalVortexEnabled = v, () -> c.portalVortexColor, v -> c.portalVortexColor = v, () -> c.portalVortexParticleKind, v -> c.portalVortexParticleKind = v));
+				rows.add(particleCosmeticRow("heartTrail", () -> c.heartTrailEnabled, v -> c.heartTrailEnabled = v, () -> c.heartTrailParticle, v -> c.heartTrailParticle = v));
+				rows.add(colorCosmeticRow("spiralGalaxy", () -> c.spiralGalaxyEnabled, v -> c.spiralGalaxyEnabled = v, () -> c.spiralGalaxyColor, v -> c.spiralGalaxyColor = v, () -> c.spiralGalaxyParticleKind, v -> c.spiralGalaxyParticleKind = v));
+				rows.add(colorCosmeticRow("jumpTrail", () -> c.jumpTrailEnabled, v -> c.jumpTrailEnabled = v, () -> c.jumpTrailColor, v -> c.jumpTrailColor = v, () -> c.jumpTrailParticleKind, v -> c.jumpTrailParticleKind = v));
+				rows.add(particleCosmeticRow("totemFlash", () -> c.totemFlashEnabled, v -> c.totemFlashEnabled = v, () -> c.totemFlashParticle, v -> c.totemFlashParticle = v));
+				rows.add(particleCosmeticRow("sculkPulse", () -> c.sculkPulseEnabled, v -> c.sculkPulseEnabled = v, () -> c.sculkPulseParticle, v -> c.sculkPulseParticle = v));
+				rows.add(particleCosmeticRow("omenAura", () -> c.omenAuraEnabled, v -> c.omenAuraEnabled = v, () -> c.omenAuraParticle, v -> c.omenAuraParticle = v));
+				rows.add(colorCosmeticRow("gustAura", () -> c.gustAuraEnabled, v -> c.gustAuraEnabled = v, () -> c.gustAuraColor, v -> c.gustAuraColor = v, () -> c.gustAuraParticleKind, v -> c.gustAuraParticleKind = v));
+				rows.add(colorCosmeticRow("ashFall", () -> c.ashFallEnabled, v -> c.ashFallEnabled = v, () -> c.ashFallColor, v -> c.ashFallColor = v, () -> c.ashFallParticleKind, v -> c.ashFallParticleKind = v));
+				rows.add(defaultableParticleCosmeticRow("campfireSmoke", () -> c.campfireSmokeEnabled, v -> c.campfireSmokeEnabled = v, () -> c.campfireSmokeParticleKind, v -> c.campfireSmokeParticleKind = v));
+				rows.add(colorCosmeticRow("tornado", () -> c.tornadoEnabled, v -> c.tornadoEnabled = v, () -> c.tornadoColor, v -> c.tornadoColor = v, () -> c.tornadoParticleKind, v -> c.tornadoParticleKind = v));
+				rows.add(colorCosmeticRow("blackHole", () -> c.blackHoleEnabled, v -> c.blackHoleEnabled = v, () -> c.blackHoleColor, v -> c.blackHoleColor = v, () -> c.blackHoleParticleKind, v -> c.blackHoleParticleKind = v));
+				rows.add(colorCosmeticRow("twinVortex", () -> c.twinVortexEnabled, v -> c.twinVortexEnabled = v, () -> c.twinVortexColor, v -> c.twinVortexColor = v, () -> c.twinVortexParticleKind, v -> c.twinVortexParticleKind = v));
+				rows.add(particleCosmeticRow("enchantedCritSparkle", () -> c.enchantedCritSparkleEnabled, v -> c.enchantedCritSparkleEnabled = v, () -> c.enchantedCritSparkleParticle, v -> c.enchantedCritSparkleParticle = v));
+				rows.add(particleCosmeticRow("dustPlumeTrail", () -> c.dustPlumeTrailEnabled, v -> c.dustPlumeTrailEnabled = v, () -> c.dustPlumeTrailParticle, v -> c.dustPlumeTrailParticle = v));
+				rows.add(colorCosmeticRow("chargeUp", () -> c.chargeUpEnabled, v -> c.chargeUpEnabled = v, () -> c.chargeUpColor, v -> c.chargeUpColor = v, () -> c.chargeUpParticleKind, v -> c.chargeUpParticleKind = v));
+				rows.add(colorCosmeticRow("orbitRings", () -> c.orbitRingsEnabled, v -> c.orbitRingsEnabled = v, () -> c.orbitRingsColor, v -> c.orbitRingsColor = v, () -> c.orbitRingsParticleKind, v -> c.orbitRingsParticleKind = v));
+				rows.add(particleCosmeticRow("lightningAura", () -> c.lightningAuraEnabled, v -> c.lightningAuraEnabled = v, () -> c.lightningAuraParticle, v -> c.lightningAuraParticle = v));
+				rows.add(defaultableParticleCosmeticRow("confettiBurst", () -> c.confettiBurstEnabled, v -> c.confettiBurstEnabled = v, () -> c.confettiBurstParticleKind, v -> c.confettiBurstParticleKind = v));
+				rows.add(colorCosmeticRow("mothWings", () -> c.mothWingsEnabled, v -> c.mothWingsEnabled = v, () -> c.mothWingsColor, v -> c.mothWingsColor = v, () -> c.mothWingsParticleKind, v -> c.mothWingsParticleKind = v));
+				rows.add(colorCosmeticRow("phoenixWings", () -> c.phoenixWingsEnabled, v -> c.phoenixWingsEnabled = v, () -> c.phoenixWingsColor, v -> c.phoenixWingsColor = v, () -> c.phoenixWingsParticleKind, v -> c.phoenixWingsParticleKind = v));
+				rows.add(particleCosmeticRow("voidRift", () -> c.voidRiftEnabled, v -> c.voidRiftEnabled = v, () -> c.voidRiftParticle, v -> c.voidRiftParticle = v));
+				rows.add(particleCosmeticRow("starWeave", () -> c.starWeaveEnabled, v -> c.starWeaveEnabled = v, () -> c.starWeaveParticle, v -> c.starWeaveParticle = v));
+				rows.add(particleCosmeticRow("ascendingSparkles", () -> c.ascendingSparklesEnabled, v -> c.ascendingSparklesEnabled = v, () -> c.ascendingSparklesParticle, v -> c.ascendingSparklesParticle = v));
+				rows.add(particleCosmeticRow("cometTrail", () -> c.cometTrailEnabled, v -> c.cometTrailEnabled = v, () -> c.cometTrailParticle, v -> c.cometTrailParticle = v));
+				rows.add(particleCosmeticRow("starVeil", () -> c.starVeilEnabled, v -> c.starVeilEnabled = v, () -> c.starVeilParticle, v -> c.starVeilParticle = v));
+				rows.add(particleCosmeticRow("radiantPulse", () -> c.radiantPulseEnabled, v -> c.radiantPulseEnabled = v, () -> c.radiantPulseParticle, v -> c.radiantPulseParticle = v));
+				rows.add(colorCosmeticRow("pulsingSphere", () -> c.pulsingSphereEnabled, v -> c.pulsingSphereEnabled = v, () -> c.pulsingSphereColor, v -> c.pulsingSphereColor = v, () -> c.pulsingSphereParticleKind, v -> c.pulsingSphereParticleKind = v));
+				rows.add(colorCosmeticRow("scanner", () -> c.scannerEnabled, v -> c.scannerEnabled = v, () -> c.scannerColor, v -> c.scannerColor = v, () -> c.scannerParticleKind, v -> c.scannerParticleKind = v));
+				rows.add(colorCosmeticRow("physicsCape", () -> c.physicsCapeEnabled, v -> c.physicsCapeEnabled = v, () -> c.physicsCapeColor, v -> c.physicsCapeColor = v, () -> c.physicsCapeParticleKind, v -> c.physicsCapeParticleKind = v));
+				rows.add(colorCosmeticRow("cloak", () -> c.cloakEnabled, v -> c.cloakEnabled = v, () -> c.cloakColor, v -> c.cloakColor = v, () -> c.cloakParticleKind, v -> c.cloakParticleKind = v));
 			}
 			case CLOUD -> {
-				rows.add(infoRow("Sync HUD positions and cosmetics to sky.melloo.me."));
-				rows.add(infoRow("Requires a linked account - see /me link."));
-				rows.add(boolRow("Cloud Sync", () -> c.cloudSyncEnabled, v -> c.cloudSyncEnabled = v));
-				rows.add(actionRow("Push Now", () -> CloudSyncManager.push(Minecraft.getInstance())));
-				rows.add(actionRow("Pull Now", () -> CloudSyncManager.forcePull(Minecraft.getInstance(), this::refreshAfterChildClosed)));
+				rows.add(infoRow(Lang.s("mellooessentials.gui.settings.cloud.info_sync")));
+				rows.add(infoRow(Lang.s("mellooessentials.gui.settings.cloud.info_requires_link")));
+				rows.add(boolRow(Lang.s("mellooessentials.gui.settings.cloud.sync_toggle"), () -> c.cloudSyncEnabled, v -> c.cloudSyncEnabled = v));
+				rows.add(actionRow(Lang.s("mellooessentials.gui.settings.cloud.push_now"), () -> CloudSyncManager.push(Minecraft.getInstance())));
+				rows.add(actionRow(Lang.s("mellooessentials.gui.settings.cloud.pull_now"), () -> CloudSyncManager.forcePull(Minecraft.getInstance(), this::refreshAfterChildClosed)));
 			}
 		}
 		rebuildRows();
@@ -222,7 +227,7 @@ public class SettingsScreen extends Screen {
 			}
 			y += ROW_H + ROW_GAP;
 		}
-		addRenderableWidget(new StyledButton(panelX() + (panelWidth() - 80) / 2, panelY() + panelHeight() - 28, 80, 20, "Done", 0xFF55FF55, () -> {
+		addRenderableWidget(new StyledButton(panelX() + (panelWidth() - 80) / 2, panelY() + panelHeight() - 28, 80, 20, Lang.s("mellooessentials.gui.common.done"), 0xFF55FF55, () -> {
 			EssentialsConfig.save();
 			Minecraft.getInstance().setScreen(parent);
 		}));
@@ -230,7 +235,7 @@ public class SettingsScreen extends Screen {
 		Runnable opener = openSkyMellooScreen;
 		if (opener != null) {
 			int w = 120;
-			addRenderableWidget(new StyledButton(px + pw - w - 10, panelY() + 8, w, 16, "SkyMelloo Config", 0xFFFF6EC7, () -> {
+			addRenderableWidget(new StyledButton(px + pw - w - 10, panelY() + 8, w, 16, Lang.s("mellooessentials.gui.settings.skymelloo_config"), 0xFFFF6EC7, () -> {
 				EssentialsConfig.save();
 				opener.run();
 			}));
@@ -293,7 +298,7 @@ public class SettingsScreen extends Screen {
 		int ph = panelHeight();
 		gg.fill(px - 2, py - 2, px + pw + 2, py + ph + 2, BORDER_COLOR);
 		gg.fill(px, py, px + pw, py + ph, PANEL_COLOR);
-		gg.text(this.font, "MellooEssentials", px + 10, py + 10, 0xFFFFD700);
+		gg.text(this.font, Lang.s("mellooessentials.gui.settings.title"), px + 10, py + 10, 0xFFFFD700);
 		super.extractRenderState(gg, mouseX, mouseY, partialTick);
 	}
 
@@ -325,18 +330,21 @@ public class SettingsScreen extends Screen {
 	}
 
 	/** Color-capable - also gets a particle-kind cycle (with a "Default (Color)" entry) alongside the color grid, see CosmeticEditScreen. */
-	private RowFactory colorCosmeticRow(String label, String effectKey, BooleanSupplier getter, Consumer<Boolean> setter, java.util.function.Supplier<java.awt.Color> colorGetter, Consumer<java.awt.Color> colorSetter, java.util.function.Supplier<String> particleGetter, Consumer<String> particleSetter) {
+	private RowFactory colorCosmeticRow(String effectKey, BooleanSupplier getter, Consumer<Boolean> setter, java.util.function.Supplier<java.awt.Color> colorGetter, Consumer<java.awt.Color> colorSetter, java.util.function.Supplier<String> particleGetter, Consumer<String> particleSetter) {
+		String label = Lang.s("mellooessentials.cosmetic." + effectKey);
 		return (x, y, w, h) -> new BoolRowWidget(x, y, w, h, label, getter, setter,
 				() -> Minecraft.getInstance().setScreen(new CosmeticEditScreen(this, label, effectKey, getter, setter, colorGetter, colorSetter, particleGetter, particleSetter)));
 	}
 
 	/** No color, but its "default" look is a special fixed combo rather than one named kind, so it still gets a "Default (Original)" entry - see CosmeticEditScreen. */
-	private RowFactory defaultableParticleCosmeticRow(String label, String effectKey, BooleanSupplier getter, Consumer<Boolean> setter, java.util.function.Supplier<String> particleGetter, Consumer<String> particleSetter) {
+	private RowFactory defaultableParticleCosmeticRow(String effectKey, BooleanSupplier getter, Consumer<Boolean> setter, java.util.function.Supplier<String> particleGetter, Consumer<String> particleSetter) {
+		String label = Lang.s("mellooessentials.cosmetic." + effectKey);
 		return (x, y, w, h) -> new BoolRowWidget(x, y, w, h, label, getter, setter,
 				() -> Minecraft.getInstance().setScreen(new CosmeticEditScreen(this, label, effectKey, getter, setter, null, null, particleGetter, particleSetter, true)));
 	}
 
-	private RowFactory particleCosmeticRow(String label, String effectKey, BooleanSupplier getter, Consumer<Boolean> setter, java.util.function.Supplier<String> particleGetter, Consumer<String> particleSetter) {
+	private RowFactory particleCosmeticRow(String effectKey, BooleanSupplier getter, Consumer<Boolean> setter, java.util.function.Supplier<String> particleGetter, Consumer<String> particleSetter) {
+		String label = Lang.s("mellooessentials.cosmetic." + effectKey);
 		return (x, y, w, h) -> new BoolRowWidget(x, y, w, h, label, getter, setter,
 				() -> Minecraft.getInstance().setScreen(new CosmeticEditScreen(this, label, effectKey, getter, setter, null, null, particleGetter, particleSetter)));
 	}
@@ -347,7 +355,7 @@ public class SettingsScreen extends Screen {
 		private final Tab tab;
 
 		TabButtonWidget(int x, int y, int w, int h, Tab tab) {
-			super(x, y, w, h, Component.literal(tab.label));
+			super(x, y, w, h, Lang.c(tab.translationKey));
 			this.tab = tab;
 		}
 
@@ -361,8 +369,8 @@ public class SettingsScreen extends Screen {
 			gg.fill(x1, y1, x2, y2, active ? 0x4066DDFF : (this.isHovered() ? ROW_BG_HOVER : 0x20000000));
 			gg.fill(x1, y2 - 2, x2, y2, active ? 0xFF66DDFF : 0x00000000);
 			var font = Minecraft.getInstance().font;
-			int textWidth = font.width(tab.label);
-			gg.text(font, tab.label, x1 + (getWidth() - textWidth) / 2, y1 + (getHeight() - 8) / 2, active ? TEXT_ON : TEXT_OFF);
+			int textWidth = font.width(tab.label());
+			gg.text(font, tab.label(), x1 + (getWidth() - textWidth) / 2, y1 + (getHeight() - 8) / 2, active ? TEXT_ON : TEXT_OFF);
 		}
 
 		@Override

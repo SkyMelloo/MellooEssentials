@@ -2,6 +2,7 @@ package com.melloo.mellooessentials.client.gui;
 
 import com.melloo.mellooessentials.client.config.EssentialsConfig;
 import com.melloo.mellooessentials.client.cosmetics.ParticleKind;
+import com.melloo.mellooessentials.client.util.Lang;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -125,7 +126,7 @@ public class CosmeticEditScreen extends Screen {
 			}
 		}
 
-		addRenderableWidget(new SettingsScreen.StyledButton(px + (PANEL_WIDTH - 80) / 2, py + panelHeight() - 26, 80, 20, "Close", 0xFF55FF55, () -> {
+		addRenderableWidget(new SettingsScreen.StyledButton(px + (PANEL_WIDTH - 80) / 2, py + panelHeight() - 26, 80, 20, Lang.s("mellooessentials.gui.common.close"), 0xFF55FF55, () -> {
 			EssentialsConfig.save();
 			Minecraft.getInstance().setScreen(parent);
 			parent.refreshAfterChildClosed();
@@ -167,7 +168,7 @@ public class CosmeticEditScreen extends Screen {
 
 	private final class ToggleRowWidget extends AbstractWidget {
 		ToggleRowWidget(int x, int y, int w, int h) {
-			super(x, y, w, h, Component.literal("Enabled"));
+			super(x, y, w, h, Lang.c("mellooessentials.gui.common.enabled"));
 		}
 
 		@Override
@@ -176,7 +177,7 @@ public class CosmeticEditScreen extends Screen {
 			int dotSize = 6;
 			int dotY = getY() + (getHeight() - dotSize) / 2;
 			gg.fill(getX(), dotY, getX() + dotSize, dotY + dotSize, enabled ? 0xFF55FF55 : 0xFF555555);
-			gg.text(Minecraft.getInstance().font, "Enabled", getX() + dotSize + 6, getY() + (getHeight() - 8) / 2, enabled ? 0xFFFFFFFF : 0xFFAAAAAA);
+			gg.text(Minecraft.getInstance().font, Lang.s("mellooessentials.gui.common.enabled"), getX() + dotSize + 6, getY() + (getHeight() - 8) / 2, enabled ? 0xFFFFFFFF : 0xFFAAAAAA);
 		}
 
 		@Override
@@ -193,7 +194,7 @@ public class CosmeticEditScreen extends Screen {
 	/** Still reported to other players (they keep seeing it via presence sync) - only suppresses the local self-render call, see EssentialsConfig#isSelfHidden. */
 	private final class HideSelfRowWidget extends AbstractWidget {
 		HideSelfRowWidget(int x, int y, int w, int h) {
-			super(x, y, w, h, Component.literal("Hide My Own Particles"));
+			super(x, y, w, h, Lang.c("mellooessentials.gui.cosmetic_edit.hide_own_particles"));
 		}
 
 		@Override
@@ -202,7 +203,7 @@ public class CosmeticEditScreen extends Screen {
 			int dotSize = 6;
 			int dotY = getY() + (getHeight() - dotSize) / 2;
 			gg.fill(getX(), dotY, getX() + dotSize, dotY + dotSize, hidden ? 0xFF55FF55 : 0xFF555555);
-			gg.text(Minecraft.getInstance().font, "Hide My Own Particles", getX() + dotSize + 6, getY() + (getHeight() - 8) / 2, hidden ? 0xFFFFFFFF : 0xFFAAAAAA);
+			gg.text(Minecraft.getInstance().font, Lang.s("mellooessentials.gui.cosmetic_edit.hide_own_particles"), getX() + dotSize + 6, getY() + (getHeight() - 8) / 2, hidden ? 0xFFFFFFFF : 0xFFAAAAAA);
 		}
 
 		@Override
@@ -254,7 +255,7 @@ public class CosmeticEditScreen extends Screen {
 		private final List<String> options = new ArrayList<>();
 
 		ParticleCycleWidget(int x, int y, int w, int h, boolean hasDefault) {
-			super(x, y, w, h, Component.literal("Particle"));
+			super(x, y, w, h, Lang.c("mellooessentials.gui.common.particle"));
 			this.hasDefault = hasDefault;
 			if (hasDefault) {
 				options.add(null);
@@ -267,9 +268,9 @@ public class CosmeticEditScreen extends Screen {
 		private String currentLabel() {
 			String current = particleGetter.get();
 			if (current == null) {
-				return colorGetter != null ? "Default (Color)" : "Default (Original)";
+				return colorGetter != null ? Lang.s("mellooessentials.gui.cosmetic_edit.default_color") : Lang.s("mellooessentials.gui.cosmetic_edit.default_original");
 			}
-			return ParticleKind.byNameOr(current, ParticleKind.values()[0]).label;
+			return ParticleKind.byNameOr(current, ParticleKind.values()[0]).label();
 		}
 
 		@Override
@@ -277,7 +278,7 @@ public class CosmeticEditScreen extends Screen {
 			if (this.isHovered()) {
 				gg.fill(getX(), getY(), getX() + getWidth(), getY() + getHeight(), 0x14FFFFFF);
 			}
-			String text = "Particle: " + currentLabel() + "  (click to cycle)";
+			String text = Lang.s("mellooessentials.gui.particle_cycle.label", currentLabel());
 			gg.text(Minecraft.getInstance().font, text, getX() + 2, getY() + (getHeight() - 8) / 2, 0xFFFFFFFF);
 		}
 

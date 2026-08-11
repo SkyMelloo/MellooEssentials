@@ -2,6 +2,7 @@ package com.melloo.mellooessentials.client.gui;
 
 import com.melloo.mellooessentials.client.config.EssentialsConfig;
 import com.melloo.mellooessentials.client.social.HypixelLocationTracker;
+import com.melloo.mellooessentials.client.util.Lang;
 import com.melloo.mellooessentials.client.util.ServerPingMonitor;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
 import net.minecraft.client.DeltaTracker;
@@ -24,7 +25,12 @@ import java.util.List;
 public final class PlayerInfoHud implements HudElement {
 	public static final PlayerInfoHud INSTANCE = new PlayerInfoHud();
 
-	private static final String[] COMPASS_DIRECTIONS = { "S", "SW", "W", "NW", "N", "NE", "E", "SE" };
+	private static final String[] COMPASS_DIRECTION_KEYS = {
+			"mellooessentials.hud.player_info.direction.s", "mellooessentials.hud.player_info.direction.sw",
+			"mellooessentials.hud.player_info.direction.w", "mellooessentials.hud.player_info.direction.nw",
+			"mellooessentials.hud.player_info.direction.n", "mellooessentials.hud.player_info.direction.ne",
+			"mellooessentials.hud.player_info.direction.e", "mellooessentials.hud.player_info.direction.se"
+	};
 
 	private PlayerInfoHud() {
 	}
@@ -35,7 +41,7 @@ public final class PlayerInfoHud implements HudElement {
 			normalized += 360F;
 		}
 		int index = Math.round(normalized / 45F) % 8;
-		return COMPASS_DIRECTIONS[index];
+		return Lang.s(COMPASS_DIRECTION_KEYS[index]);
 	}
 
 	/** Green/orange/red by how good {@code current} is - {@code higherIsBetter} true for FPS/TPS, false for ping. */
@@ -72,7 +78,7 @@ public final class PlayerInfoHud implements HudElement {
 	 */
 	public static List<String> buildLines(Minecraft client) {
 		List<String> lines = new ArrayList<>();
-		lines.add(formatStat("FPS", client.getFps(), FpsMonitor.getAverageFps(), FpsMonitor.getOnePercentLowFps(), 3, 60, 30, true, ""));
+		lines.add(formatStat(Lang.s("mellooessentials.hud.player_info.fps"), client.getFps(), FpsMonitor.getAverageFps(), FpsMonitor.getOnePercentLowFps(), 3, 60, 30, true, ""));
 		// Only the independently-measured reading (the same server-list-ping mechanism vanilla's own
 		// multiplayer screen uses for its ping bars) - not Hypixel's own server-reported tab latency,
 		// which is what didn't make sense in the first place ("1ms").
@@ -80,25 +86,25 @@ public final class PlayerInfoHud implements HudElement {
 		if (realPing != null) {
 			Double avgPing = ServerPingMonitor.getAveragePingMillis();
 			Double worstPing = ServerPingMonitor.getWorstPingMillis();
-			lines.add(formatStat("Ping", realPing.intValue(), avgPing, worstPing, 3, 80, 200, false, "ms"));
+			lines.add(formatStat(Lang.s("mellooessentials.hud.player_info.ping"), realPing.intValue(), avgPing, worstPing, 3, 80, 200, false, "ms"));
 		}
 		Integer tps = TpsEstimator.getEstimatedTps();
 		if (tps != null) {
 			Double avgTps = TpsEstimator.getAverageTps();
 			Double worstTps = TpsEstimator.getOnePercentLowTps();
-			lines.add(formatStat("TPS", tps, avgTps, worstTps, 2, 18, 10, true, ""));
+			lines.add(formatStat(Lang.s("mellooessentials.hud.player_info.tps"), tps, avgTps, worstTps, 2, 18, 10, true, ""));
 		}
 		ServerData server = client.getCurrentServer();
 		if (server != null && server.ip != null) {
-			lines.add("§rServer: §f" + server.ip);
+			lines.add("§r" + Lang.s("mellooessentials.hud.player_info.server") + ": §f" + server.ip);
 		}
 		String map = HypixelLocationTracker.getMap();
 		if (map != null) {
-			lines.add("§rArea: §f" + map);
+			lines.add("§r" + Lang.s("mellooessentials.hud.player_info.area") + ": §f" + map);
 		}
 		if (client.player != null) {
-			lines.add("§rXYZ: §f" + (int) client.player.getX() + " " + (int) client.player.getY() + " " + (int) client.player.getZ());
-			lines.add("§rFacing: §f" + compassDirection(client.player.getYRot()));
+			lines.add("§r" + Lang.s("mellooessentials.hud.player_info.xyz") + ": §f" + (int) client.player.getX() + " " + (int) client.player.getY() + " " + (int) client.player.getZ());
+			lines.add("§r" + Lang.s("mellooessentials.hud.player_info.facing") + ": §f" + compassDirection(client.player.getYRot()));
 		}
 		return lines;
 	}

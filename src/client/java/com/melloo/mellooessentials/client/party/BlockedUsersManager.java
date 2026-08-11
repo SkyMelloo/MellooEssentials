@@ -1,6 +1,7 @@
 package com.melloo.mellooessentials.client.party;
 
 import com.melloo.mellooessentials.client.util.ChatUtil;
+import com.melloo.mellooessentials.client.util.Lang;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
@@ -98,8 +99,8 @@ public final class BlockedUsersManager {
 	public static void blockAndKickIfPresent(Minecraft client, String username) {
 		boolean wasNewlyBlocked = block(username);
 		client.player.sendSystemMessage(ChatUtil.prefixed(wasNewlyBlocked
-				? "§cBlocked §f" + username + "§c - they'll be auto-kicked from any party you lead."
-				: "§7" + username + " §7was already blocked."));
+				? Lang.c("mellooessentials.chat.block.blocked", username)
+				: Lang.c("mellooessentials.chat.block.already_blocked", username)));
 		if (PartyTracker.isMember(uuidOf(client, username)) && PartyTracker.isLocalPlayerLeader()) {
 			PartyKickQueue.queueKick(username);
 		}
@@ -137,7 +138,7 @@ public final class BlockedUsersManager {
 	public static LiteralArgumentBuilder<FabricClientCommandSource> buildUnblockCommand() {
 		return ClientCommands.literal("unblock")
 				.executes(ctx -> {
-					ctx.getSource().sendFeedback(ChatUtil.prefixed("§cUsage: §f/me unblock <name>"));
+					ctx.getSource().sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.unblock.usage")));
 					return 1;
 				})
 				.then(ClientCommands.argument("name", StringArgumentType.word())
@@ -146,8 +147,8 @@ public final class BlockedUsersManager {
 							String username = StringArgumentType.getString(ctx, "name");
 							boolean removed = unblock(username);
 							ctx.getSource().sendFeedback(ChatUtil.prefixed(removed
-									? "§7Unblocked §f" + username + "§7."
-									: "§7" + username + " §7wasn't blocked."));
+									? Lang.c("mellooessentials.chat.unblock.unblocked", username)
+									: Lang.c("mellooessentials.chat.unblock.not_blocked", username)));
 							return 1;
 						}));
 	}
@@ -155,12 +156,12 @@ public final class BlockedUsersManager {
 	private static void sendBlockedList(FabricClientCommandSource source) {
 		List<String> list = getBlocked();
 		if (list.isEmpty()) {
-			source.sendFeedback(ChatUtil.prefixed("§7No blocked users - §f/me block <name>§7 to block someone from your parties."));
+			source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.block.empty")));
 			return;
 		}
-		source.sendFeedback(ChatUtil.prefixed("§6=== Blocked users (" + list.size() + ") ==="));
+		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.block.header", list.size())));
 		for (String username : list) {
-			source.sendFeedback(ChatUtil.prefixed("§d" + username + " §7- §f/me unblock " + username));
+			source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.block.entry", username, username)));
 		}
 	}
 

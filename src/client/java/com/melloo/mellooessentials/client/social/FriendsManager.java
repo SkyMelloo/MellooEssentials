@@ -4,12 +4,14 @@ import com.melloo.mellooessentials.client.MellooEssentialsClient;
 import com.melloo.mellooessentials.client.api.ApiClient;
 import com.melloo.mellooessentials.client.api.ModAuthManager;
 import com.melloo.mellooessentials.client.util.ChatUtil;
+import com.melloo.mellooessentials.client.util.Lang;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.network.chat.MutableComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +76,7 @@ public final class FriendsManager {
 						boolean alreadyKnown = previousRequests.stream().anyMatch(r -> r.uuid().equals(request.uuid()));
 						if (!alreadyKnown && Minecraft.getInstance().player != null) {
 							Minecraft.getInstance().player.sendSystemMessage(ChatUtil.prefixed(
-									"§d" + request.username() + " §7sent you a friend request - §f/me friend accept " + request.username()));
+									Lang.c("mellooessentials.chat.friend.incoming_request", request.username(), request.username())));
 						}
 					}
 				}));
@@ -101,7 +103,7 @@ public final class FriendsManager {
 						return;
 					}
 					if (error != null) {
-						client.player.sendSystemMessage(ChatUtil.prefixed("§cCouldn't send friend request: " + ChatUtil.friendlyError(error)));
+						client.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.friend.send_failed", ChatUtil.friendlyError(error))));
 						return;
 					}
 					client.player.sendSystemMessage(ChatUtil.prefixed(describeRequestResult(result)));
@@ -109,15 +111,15 @@ public final class FriendsManager {
 				}));
 	}
 
-	private static String describeRequestResult(ApiClient.FriendRequestResult result) {
+	private static MutableComponent describeRequestResult(ApiClient.FriendRequestResult result) {
 		String status = result.status() == null ? "" : result.status().toLowerCase(Locale.ROOT);
 		return switch (status) {
-			case "self" -> "§cYou can't friend yourself.";
-			case "already_friends" -> "§7You're already friends with §d" + result.username() + "§7.";
-			case "accepted" -> "§d" + result.username() + " §7had already sent you a request - you're friends now!";
-			case "pending" -> "§7Friend request sent to §d" + result.username() + "§7.";
-			case "limit" -> "§c" + result.username() + " has too many pending friend requests right now.";
-			default -> "§7Friend request sent to §d" + result.username() + "§7.";
+			case "self" -> Lang.c("mellooessentials.chat.friend.result_self");
+			case "already_friends" -> Lang.c("mellooessentials.chat.friend.result_already_friends", result.username());
+			case "accepted" -> Lang.c("mellooessentials.chat.friend.result_accepted", result.username());
+			case "pending" -> Lang.c("mellooessentials.chat.friend.result_pending", result.username());
+			case "limit" -> Lang.c("mellooessentials.chat.friend.result_limit", result.username());
+			default -> Lang.c("mellooessentials.chat.friend.result_pending", result.username());
 		};
 	}
 
@@ -130,8 +132,8 @@ public final class FriendsManager {
 						return;
 					}
 					client.player.sendSystemMessage(ChatUtil.prefixed(error == null
-							? "§aYou're now friends with §d" + result.username() + "§a."
-							: "§cCouldn't accept: " + ChatUtil.friendlyError(error)));
+							? Lang.c("mellooessentials.chat.friend.accepted", result.username())
+							: Lang.c("mellooessentials.chat.friend.accept_failed", ChatUtil.friendlyError(error))));
 					refresh(client);
 				}));
 	}
@@ -144,8 +146,8 @@ public final class FriendsManager {
 						return;
 					}
 					client.player.sendSystemMessage(ChatUtil.prefixed(error == null
-							? "§7Declined the friend request from §d" + (result != null ? result.username() : username) + "§7."
-							: "§cCouldn't decline: " + ChatUtil.friendlyError(error)));
+							? Lang.c("mellooessentials.chat.friend.declined", result != null ? result.username() : username)
+							: Lang.c("mellooessentials.chat.friend.decline_failed", ChatUtil.friendlyError(error))));
 					refresh(client);
 				}));
 	}
@@ -159,25 +161,25 @@ public final class FriendsManager {
 						return;
 					}
 					client.player.sendSystemMessage(ChatUtil.prefixed(error == null
-							? "§7Removed §d" + (result != null ? result.username() : username) + " §7from your friends."
-							: "§cCouldn't remove: " + ChatUtil.friendlyError(error)));
+							? Lang.c("mellooessentials.chat.friend.removed", result != null ? result.username() : username)
+							: Lang.c("mellooessentials.chat.friend.remove_failed", ChatUtil.friendlyError(error))));
 					refresh(client);
 				}));
 	}
 
 	private static void sendFriendsList(FabricClientCommandSource source) {
 		if (friends.isEmpty()) {
-			source.sendFeedback(ChatUtil.prefixed("§7No friends yet - §f/me friend <name>§7 to send a request."));
+			source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.friend.empty")));
 		} else {
-			source.sendFeedback(ChatUtil.prefixed("§6=== Friends (" + friends.size() + ") ==="));
+			source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.friend.header", friends.size())));
 			for (ApiClient.FriendEntry friend : friends) {
-				source.sendFeedback(ChatUtil.prefixed("§d" + friend.username()));
+				source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.friend.entry", friend.username())));
 			}
 		}
 		if (!incomingRequests.isEmpty()) {
-			source.sendFeedback(ChatUtil.prefixed("§6=== Pending requests (" + incomingRequests.size() + ") ==="));
+			source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.friend.requests_header", incomingRequests.size())));
 			for (ApiClient.FriendRequestEntry request : incomingRequests) {
-				source.sendFeedback(ChatUtil.prefixed("§d" + request.username() + " §7- §f/me friend accept " + request.username()));
+				source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.friend.request_entry", request.username(), request.username())));
 			}
 		}
 	}

@@ -47,7 +47,7 @@ public final class ChatUtil {
 			cause = cause.getCause();
 		}
 		if (cause instanceof java.net.http.HttpTimeoutException) {
-			return "Timed out - server not responding";
+			return Lang.s("mellooessentials.chat.error.timeout");
 		}
 		String msg = cause.getMessage();
 		return msg != null && !msg.isBlank() ? msg : cause.getClass().getSimpleName();

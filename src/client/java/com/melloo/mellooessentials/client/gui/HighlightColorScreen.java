@@ -1,6 +1,7 @@
 package com.melloo.mellooessentials.client.gui;
 
 import com.melloo.mellooessentials.client.config.EssentialsConfig;
+import com.melloo.mellooessentials.client.util.Lang;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -66,8 +67,8 @@ public class HighlightColorScreen extends Screen {
 	protected void init() {
 		int px = panelX();
 		int py = panelY();
-		addRenderableWidget(new ToggleRowWidget(px + 12, py + 30, PANEL_WIDTH - 24, 16, "Enabled", enabledGetter, enabledSetter));
-		addRenderableWidget(new ToggleRowWidget(px + 12, py + 48, PANEL_WIDTH - 24, 16, "Glow Outline (visible through walls)", outlineGetter, outlineSetter));
+		addRenderableWidget(new ToggleRowWidget(px + 12, py + 30, PANEL_WIDTH - 24, 16, Lang.s("mellooessentials.gui.common.enabled"), enabledGetter, enabledSetter));
+		addRenderableWidget(new ToggleRowWidget(px + 12, py + 48, PANEL_WIDTH - 24, 16, Lang.s("mellooessentials.gui.highlight_color.glow_outline"), outlineGetter, outlineSetter));
 
 		int swatchSize = 24;
 		int gap = 4;
@@ -80,7 +81,7 @@ public class HighlightColorScreen extends Screen {
 			addRenderableWidget(new SwatchWidget(sx, sy, swatchSize, swatchSize, MC_COLORS[i]));
 		}
 
-		addRenderableWidget(new SettingsScreen.StyledButton(px + (PANEL_WIDTH - 80) / 2, py + PANEL_HEIGHT - 26, 80, 20, "Close", 0xFF55FF55, () -> {
+		addRenderableWidget(new SettingsScreen.StyledButton(px + (PANEL_WIDTH - 80) / 2, py + PANEL_HEIGHT - 26, 80, 20, Lang.s("mellooessentials.gui.common.close"), 0xFF55FF55, () -> {
 			EssentialsConfig.save();
 			Minecraft.getInstance().setScreen(parent);
 			parent.refreshAfterChildClosed();

@@ -2,11 +2,11 @@ package com.melloo.mellooessentials.client.gui;
 
 import com.melloo.mellooessentials.client.config.EssentialsConfig;
 import com.melloo.mellooessentials.client.util.CloudSyncManager;
+import com.melloo.mellooessentials.client.util.Lang;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
-import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,7 +76,7 @@ public class HudLayoutEditorScreen extends Screen {
 	private enum Corner { TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT }
 
 	public HudLayoutEditorScreen() {
-		super(Component.literal("HUD Layout"));
+		super(Lang.c("mellooessentials.gui.hud_layout.title"));
 	}
 
 	@Override
@@ -91,7 +91,7 @@ public class HudLayoutEditorScreen extends Screen {
 				this.font.width("sky.melloo.me · 1h 05m 30s · 999ms")
 		) + 20;
 		elements.add(new Draggable(
-				"Connection Status",
+				Lang.s("mellooessentials.gui.hud_layout.connection_status"),
 				() -> config.hudConnectionStatusX >= 0 ? config.hudConnectionStatusX : 6,
 				() -> config.hudConnectionStatusY >= 0 ? config.hudConnectionStatusY : 6,
 				(x, y) -> {
@@ -112,7 +112,7 @@ public class HudLayoutEditorScreen extends Screen {
 		}
 		int playerInfoHeight = 4 + Math.max(1, playerInfoLines.size()) * 10 + 2;
 		elements.add(new Draggable(
-				"Player Info",
+				Lang.s("mellooessentials.gui.hud_layout.player_info"),
 				() -> config.hudPlayerInfoX >= 0 ? config.hudPlayerInfoX : 6,
 				() -> config.hudPlayerInfoY >= 0 ? config.hudPlayerInfoY : 6,
 				(x, y) -> {
@@ -286,7 +286,7 @@ public class HudLayoutEditorScreen extends Screen {
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor gg, int mouseX, int mouseY, float partialTick) {
-		gg.centeredText(this.font, "HUD Layout — drag to move, Esc to close", this.width / 2, 10, 0xFFFFFFFF);
+		gg.centeredText(this.font, Lang.s("mellooessentials.gui.hud_layout.hint"), this.width / 2, 10, 0xFFFFFFFF);
 		if (snapLineX != null) {
 			gg.fill(snapLineX, 0, snapLineX + 1, this.height, 0xAAFF6EC7);
 		}

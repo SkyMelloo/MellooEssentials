@@ -20,6 +20,7 @@ import com.melloo.mellooessentials.client.social.StaffEncounterTracker;
 import com.melloo.mellooessentials.client.util.ChatUtil;
 import com.melloo.mellooessentials.client.util.CloudSyncManager;
 import com.melloo.mellooessentials.client.util.HypixelDetector;
+import com.melloo.mellooessentials.client.util.Lang;
 import com.melloo.mellooessentials.client.util.ServerPingMonitor;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -150,23 +151,23 @@ public class MellooEssentialsClient implements ClientModInitializer {
 										.thenCompose(ApiClient::fetchStaffEncounters)
 										.thenAccept(encounters -> client.execute(() -> {
 											if (encounters.isEmpty()) {
-												source.sendFeedback(ChatUtil.prefixed("§7No staff encountered yet."));
+												source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.hitstaff.empty")));
 												return;
 											}
 											var sorted = new java.util.ArrayList<>(encounters);
 											sorted.sort((a, b) -> Long.compare(b.lastSeenMillis(), a.lastSeenMillis()));
-											source.sendFeedback(ChatUtil.prefixed("§6=== Staff Encountered (" + sorted.size() + ") ==="));
+											source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.hitstaff.header", sorted.size())));
 											long now = System.currentTimeMillis();
 											for (var entry : sorted) {
 												String roleLabel = switch (entry.role()) {
-													case "owner" -> "Owner";
-													case "admin" -> "Admin";
-													case "developer" -> "Developer";
-													case "moderator" -> "Moderator";
+													case "owner" -> Lang.s("mellooessentials.role.owner");
+													case "admin" -> Lang.s("mellooessentials.role.admin");
+													case "developer" -> Lang.s("mellooessentials.role.developer");
+													case "moderator" -> Lang.s("mellooessentials.role.moderator");
 													default -> entry.role();
 												};
 												String displayName = entry.websiteDisplayName() != null ? entry.websiteDisplayName() : entry.username();
-												source.sendFeedback(ChatUtil.prefixed("§6[" + roleLabel + "] §f" + displayName + " §7- last seen " + formatAgo(now - entry.lastSeenMillis()) + " ago"));
+												source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.hitstaff.entry", roleLabel, displayName, formatAgo(now - entry.lastSeenMillis()))));
 											}
 										}));
 								return 1;
@@ -175,7 +176,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 							// valid signature works.
 							.then(ClientCommands.literal("verify")
 									.executes(ctx -> {
-										ctx.getSource().sendFeedback(ChatUtil.prefixed("§cUsage: §f/me verify <code>"));
+										ctx.getSource().sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.verify.usage")));
 										return 1;
 									})
 									.then(ClientCommands.argument("code", StringArgumentType.word()).executes(ctx -> {
@@ -185,7 +186,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 										if (client.player == null) {
 											return 1;
 										}
-										source.sendFeedback(ChatUtil.prefixed("Checking code..."));
+										source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.verify.checking")));
 										ModAuthManager.getIdentity(client).thenCompose(identity -> ApiClient.verifyAccount(code, identity))
 												.whenComplete((result, error) ->
 														Minecraft.getInstance().execute(() -> {
@@ -194,11 +195,11 @@ public class MellooEssentialsClient implements ClientModInitializer {
 																return;
 															}
 															if (error != null) {
-																c.player.sendSystemMessage(ChatUtil.prefixed("§cConnection failed: " + ChatUtil.friendlyError(error)));
+																c.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.verify.connection_failed", ChatUtil.friendlyError(error))));
 															} else if (result.ok()) {
-																c.player.sendSystemMessage(ChatUtil.prefixed("§aAccount linked! You're now an admin on sky.melloo.me."));
+																c.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.verify.linked")));
 															} else {
-																c.player.sendSystemMessage(ChatUtil.prefixed("§cFailed: " + result.error()));
+																c.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.verify.failed", result.error())));
 															}
 														})
 												);
@@ -210,30 +211,30 @@ public class MellooEssentialsClient implements ClientModInitializer {
 	}
 
 	private static void sendHelp(net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource source) {
-		source.sendFeedback(ChatUtil.prefixed("§6=== MellooEssentials Commands §7(also as §f/me§7) ==="));
-		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials friend <name>§7/§aaccept§7/§adecline§7/§aremove§7/§alist §7- manage friends"));
-		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials chat party <msg>§7/§achat <name> <msg> §7- relay chat (party or direct)"));
-		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials hitstaff §7- staff you've encountered before"));
-		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials block <name>§7/§aunblock <name> §7- block a party member (auto-kick)"));
-		source.sendFeedback(ChatUtil.prefixed("§a/mellooessentials verify <code> §7- link your account to sky.melloo.me (admin)"));
+		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.header")));
+		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.friend")));
+		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.chat")));
+		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.hitstaff")));
+		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.block")));
+		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.verify")));
 	}
 
 	/** Rough "X ago" duration for /me hitstaff - coarsest unit only (a last-seen from 2 days ago doesn't need minute precision). */
 	private static String formatAgo(long millisAgo) {
 		long seconds = millisAgo / 1000;
 		if (seconds < 60) {
-			return "moments";
+			return Lang.s("mellooessentials.time.moments");
 		}
 		long minutes = seconds / 60;
 		if (minutes < 60) {
-			return minutes + " minute" + (minutes == 1 ? "" : "s");
+			return Lang.s(minutes == 1 ? "mellooessentials.time.minute" : "mellooessentials.time.minutes", minutes);
 		}
 		long hours = minutes / 60;
 		if (hours < 24) {
-			return hours + " hour" + (hours == 1 ? "" : "s");
+			return Lang.s(hours == 1 ? "mellooessentials.time.hour" : "mellooessentials.time.hours", hours);
 		}
 		long days = hours / 24;
-		return days + " day" + (days == 1 ? "" : "s");
+		return Lang.s(days == 1 ? "mellooessentials.time.day" : "mellooessentials.time.days", days);
 	}
 
 	/**
