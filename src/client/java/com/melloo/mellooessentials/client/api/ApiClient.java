@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * staff highlighting.
  */
 public final class ApiClient {
-	private static final String BASE_URL = "https://sky.melloo.me/api";
+	private static final String BASE_URL = "https://sky.melloo.me/api/public/mod/v1";
 	private static final HttpClient HTTP = HttpClient.newBuilder()
 			.connectTimeout(Duration.ofSeconds(5))
 			.build();
@@ -130,11 +130,11 @@ public final class ApiClient {
 				.header("X-SkyMelloo-Signature", headers.signature());
 	}
 
-	/** Only the path is signed, never the query string - none of these routes have sensitive/mutating query params. Prepends "/api" to match Express's req.path server-side. */
+	/** Only the path is signed, never the query string - none of these routes have sensitive/mutating query params. Prepends "/api/public/mod/v1" to match the full signed path the server expects. */
 	private static String requestPath(String pathWithQuery) {
 		int queryStart = pathWithQuery.indexOf('?');
 		String pathOnly = queryStart < 0 ? pathWithQuery : pathWithQuery.substring(0, queryStart);
-		return "/api" + pathOnly;
+		return "/api/public/mod/v1" + pathOnly;
 	}
 
 	// ---- auth handshake ----
@@ -143,7 +143,7 @@ public final class ApiClient {
 	}
 
 	public static CompletableFuture<ChallengeResult> requestAuthChallenge() {
-		return getJson("/mod/auth/challenge", null).thenApply(root ->
+		return getJson("/auth/challenge", null).thenApply(root ->
 				new ChallengeResult(root.get("serverId").getAsString(), root.get("serverTime").getAsLong()));
 	}
 
@@ -156,7 +156,7 @@ public final class ApiClient {
 		body.addProperty("username", username);
 		body.addProperty("uuid", uuid);
 		body.addProperty("publicKey", publicKeyBase64);
-		return postJson("/mod/auth/verify", body, null)
+		return postJson("/auth/verify", body, null)
 				.thenApply(root -> new SessionResult(root.get("expiresAt").getAsLong()));
 	}
 
@@ -169,7 +169,7 @@ public final class ApiClient {
 	public static CompletableFuture<VerifyResult> verifyAccount(String code, ModAuthManager.ModIdentity identity) {
 		JsonObject body = new JsonObject();
 		body.addProperty("code", code);
-		return postJson("/mod/verify", body, identity)
+		return postJson("/verify", body, identity)
 				.thenApply(root -> new VerifyResult(true, null))
 				.exceptionally(error -> new VerifyResult(false, com.melloo.mellooessentials.client.util.ChatUtil.friendlyError(error)));
 	}
@@ -244,7 +244,7 @@ public final class ApiClient {
 	}
 
 	public static CompletableFuture<FriendsList> fetchFriends(ModAuthManager.ModIdentity identity) {
-		return getJson("/mod/friends", identity).thenApply(root -> {
+		return getJson("/friends", identity).thenApply(root -> {
 			List<FriendEntry> friendsList = new ArrayList<>();
 			if (root.has("friends") && root.get("friends").isJsonArray()) {
 				for (JsonElement el : root.getAsJsonArray("friends")) {
@@ -277,19 +277,19 @@ public final class ApiClient {
 	}
 
 	public static CompletableFuture<FriendRequestResult> sendFriendRequest(String username, ModAuthManager.ModIdentity identity) {
-		return friendAction("/mod/friends/request", username, identity);
+		return friendAction("/friends/request", username, identity);
 	}
 
 	public static CompletableFuture<FriendRequestResult> acceptFriendRequest(String username, ModAuthManager.ModIdentity identity) {
-		return friendAction("/mod/friends/accept", username, identity);
+		return friendAction("/friends/accept", username, identity);
 	}
 
 	public static CompletableFuture<FriendRequestResult> declineFriendRequest(String username, ModAuthManager.ModIdentity identity) {
-		return friendAction("/mod/friends/decline", username, identity);
+		return friendAction("/friends/decline", username, identity);
 	}
 
 	public static CompletableFuture<FriendRequestResult> removeFriend(String username, ModAuthManager.ModIdentity identity) {
-		return friendAction("/mod/friends/remove", username, identity);
+		return friendAction("/friends/remove", username, identity);
 	}
 
 	/** Sends a DM to a friend by username - the server rejects it (403) unless the two accounts are already confirmed friends. */
@@ -297,7 +297,7 @@ public final class ApiClient {
 		JsonObject body = new JsonObject();
 		body.addProperty("toUsername", toUsername);
 		body.addProperty("text", text);
-		return postJson("/mod/relay/message", body, identity)
+		return postJson("/relay/message", body, identity)
 				.thenApply(root -> true)
 				.exceptionally(error -> false);
 	}
@@ -311,7 +311,7 @@ public final class ApiClient {
 		}
 		body.add("toUuids", uuidsArr);
 		body.addProperty("text", text);
-		return postJson("/mod/relay/party", body, identity)
+		return postJson("/relay/party", body, identity)
 				.thenApply(root -> true)
 				.exceptionally(error -> false);
 	}
@@ -322,7 +322,7 @@ public final class ApiClient {
 
 	/** Drains (not peeks) everything currently queued for this account - polled every few seconds by RelayChatManager. */
 	public static CompletableFuture<List<RelayMessage>> fetchRelayInbox(ModAuthManager.ModIdentity identity) {
-		return getJson("/mod/relay/inbox", identity).thenApply(root -> {
+		return getJson("/relay/inbox", identity).thenApply(root -> {
 			List<RelayMessage> result = new ArrayList<>();
 			if (root.has("messages") && root.get("messages").isJsonArray()) {
 				for (JsonElement el : root.getAsJsonArray("messages")) {
@@ -348,7 +348,7 @@ public final class ApiClient {
 	// -------------------------------------------------------------------------------------------
 
 	public static CompletableFuture<Map<String, Boolean>> fetchPermissions(ModAuthManager.ModIdentity identity) {
-		return getJson("/mod/permissions", identity).thenApply(root -> {
+		return getJson("/permissions", identity).thenApply(root -> {
 			Map<String, Boolean> result = new HashMap<>();
 			for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
 				if (entry.getValue().isJsonPrimitive() && entry.getValue().getAsJsonPrimitive().isBoolean()) {
@@ -364,7 +364,7 @@ public final class ApiClient {
 
 	/** The cloud-synced settings blob for the account behind this identity, or null if nothing's been saved yet (or the request failed). */
 	public static CompletableFuture<CloudSettingsResult> fetchCloudSettings(ModAuthManager.ModIdentity identity) {
-		return getJson("/mod/settings", identity)
+		return getJson("/settings", identity)
 				.thenApply(root -> root.has("settings") && root.get("settings").isJsonObject()
 						? new CloudSettingsResult(root.getAsJsonObject("settings"))
 						: null)
@@ -375,7 +375,7 @@ public final class ApiClient {
 	public static CompletableFuture<Boolean> pushCloudSettings(ModAuthManager.ModIdentity identity, JsonObject settings) {
 		JsonObject body = new JsonObject();
 		body.add("settings", settings);
-		return postJson("/mod/settings", body, identity)
+		return postJson("/settings", body, identity)
 				.thenApply(root -> true)
 				.exceptionally(error -> false);
 	}
@@ -397,7 +397,7 @@ public final class ApiClient {
 			playersArr.add(entry);
 		}
 		body.add("players", playersArr);
-		return postJson("/mod/staff-encounters", body, identity).thenApply(root -> null);
+		return postJson("/staff-encounters", body, identity).thenApply(root -> null);
 	}
 
 	/** One staff/owner member this account has ever been seen alongside, per the server's own encounter log - see the "/mellooessentials hitstaff" command. websiteDisplayName is null when that staff uuid has no linked sky.melloo.me website account. */
@@ -405,7 +405,7 @@ public final class ApiClient {
 	}
 
 	public static CompletableFuture<List<StaffEncounterEntry>> fetchStaffEncounters(ModAuthManager.ModIdentity identity) {
-		return getJson("/mod/staff-encounters", identity).thenApply(root -> {
+		return getJson("/staff-encounters", identity).thenApply(root -> {
 			List<StaffEncounterEntry> result = new ArrayList<>();
 			if (root.has("encounters") && root.get("encounters").isJsonArray()) {
 				for (JsonElement el : root.getAsJsonArray("encounters")) {
