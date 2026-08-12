@@ -1,8 +1,8 @@
 # MellooEssentials
 
 A lightweight [Fabric](https://fabricmc.net/) client mod for Hypixel: party/team highlighting, a
-mod-native friends system, and cloud-synced settings - no sky.melloo.me account needed. Paired
-with a companion page at [sky.melloo.me/download](https://sky.melloo.me/download).
+mod-native friends system, and cloud-synced settings - no sky.melloo.me account needed. Downloaded
+from [sky.melloo.me/download](https://sky.melloo.me/download).
 
 Also the shared core [SkyMelloo](https://github.com/SkyMelloo/SkyMelloo) builds on - anything both
 mods need (cosmetics, a few shared utilities) lives here once, so SkyMelloo requires this mod
