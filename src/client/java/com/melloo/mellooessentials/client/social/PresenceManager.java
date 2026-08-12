@@ -20,18 +20,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
-/**
- * The single presence report/query loop for both mods - detects other players also running either
- * mod, via sky.melloo.me's presence rendezvous. Each client reports its own UUID + cosmetics +
- * status/AFK/account-link/location every ~2s, and periodically asks which of the players in the
- * current tab list have reported in recently, getting back their cosmetics, sky.melloo.me team role,
- * and (for SkyMelloo users) their live dungeon-sync data. Purely additive - a network hiccup just
- * means nobody's presence syncs for a bit, nothing else breaks. Always on, not user-togglable.
- *
- * <p>SkyMelloo used to run a second, independent report/query loop against this exact same endpoint -
- * removed in favor of registering into the extension points below, since two uncoordinated loops for
- * the same account were racing each other and silently overwriting one another's data server-side.
- */
+/** The single presence report/query loop for both mods - see the extension-point setters below for how SkyMelloo contributes. */
 public final class PresenceManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger("MellooEssentials/PresenceManager");
 	private static final int REPORT_INTERVAL_TICKS = 40; // 2s
@@ -41,17 +30,13 @@ public final class PresenceManager {
 	private static volatile boolean reportInFlight = false;
 	private static volatile boolean queryInFlight = false;
 
-	// Optional contributions from other mods (SkyMelloo) folded into this mod's own single report -
-	// null/empty by default, never required. Same static-setter extension-point idiom used everywhere
-	// else in this codebase (HighlightManager#setPartyBlinkColorOverride, etc.).
+	// Optional contributions from other mods, folded into this mod's own single report.
 	private static Supplier<String> statusTextSupplier = () -> "";
 	private static Supplier<JsonObject> dungeonSyncSupplier = () -> null;
 	private static Supplier<List<String>> extraCosmeticsSupplier = List::of;
 	private static DungeonSyncListener dungeonSyncListener = (uuid, username, payload) -> {
 	};
-	// Fired after every report attempt (null = succeeded) - lets a contributor (e.g. SkyMelloo's own
-	// boss-room-send diagnostics) know whether ITS data actually reached the server, since this mod's
-	// own report is the only thing that ever calls the network.
+	// Fired after every report attempt (null = succeeded) so a contributor can track its own send success.
 	private static java.util.function.Consumer<Throwable> reportCompletionListener = error -> {
 	};
 
@@ -59,10 +44,7 @@ public final class PresenceManager {
 	private static final Map<UUID, Map<String, String>> otherParticleKinds = new ConcurrentHashMap<>();
 	private static final Map<UUID, String> otherRoles = new ConcurrentHashMap<>();
 	private static final Map<UUID, String> otherStatusText = new ConcurrentHashMap<>();
-	// Which presence entries also reported via SkyMelloo's own client recently (server-resolved from
-	// the report's client header, see ApiClient.PresenceEntry's doc comment) - this, not generic
-	// isModUser (true for ANY mod, since both mods share the same /presence endpoint), is the real
-	// signal for the mod-user marker's pink-vs-light-blue choice. Absent from this set = light blue.
+	// True if reported via SkyMelloo specifically (not just any mod) - the mod-user marker's pink-vs-light-blue signal.
 	private static final Set<UUID> otherIsSkyMelloo = ConcurrentHashMap.newKeySet();
 
 	private PresenceManager() {

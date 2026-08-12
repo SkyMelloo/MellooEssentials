@@ -6,11 +6,7 @@ import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Whether the current Minecraft account is linked to a sky.melloo.me website account - fetched
- * once after joining, then rechecked periodically (e.g. right after running "/me verify") so a
- * fresh link is picked up without reconnecting. Backs the accountLinked field in presence reports.
- */
+/** Whether the account is linked to sky.melloo.me - fetched on join, rechecked periodically. */
 public final class AccountLinkStatus {
 	private static final int PERIODIC_RECHECK_TICKS = 600; // 30s at 20 ticks/s
 

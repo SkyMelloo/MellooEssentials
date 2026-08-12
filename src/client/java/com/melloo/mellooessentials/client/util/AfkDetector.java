@@ -3,19 +3,7 @@ package com.melloo.mellooessentials.client.util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 
-/**
- * Whether the local player has been genuinely untouched (no movement, no camera look) for 5+
- * minutes - used to report an "AFK" status alongside plain online/offline presence (see
- * PresenceManager), so other mod users and the website can tell "online and actually playing"
- * apart from "online but stepped away".
- * <p>
- * Deliberately NOT hooked into raw keyboard/mouse GLFW callbacks (which would need a couple of new
- * Mixins on KeyboardHandler/MouseHandler) - polling the player's own position/look angle each tick is
- * a simpler, lower-risk proxy that needs no new injection points at all, and is accurate for the
- * overwhelming majority of real "stepped away from the keyboard" cases. It can't detect someone
- * clicking a stationary target with the camera perfectly still (a real but rare edge case) - not
- * worth a full input-hook for what's ultimately just a "5 min idle" heuristic, not a security check.
- */
+/** Whether the local player has been untouched (no movement/camera look) for 5+ minutes - backs the AFK presence status. */
 public final class AfkDetector {
 	private static final long AFK_THRESHOLD_TICKS = 5L * 60 * 20; // 5 min at 20 ticks/s
 	private static final double POSITION_EPSILON = 0.001;
