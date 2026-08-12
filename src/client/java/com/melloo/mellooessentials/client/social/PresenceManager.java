@@ -39,6 +39,9 @@ public final class PresenceManager {
 	// Fired after every report attempt (null = succeeded) so a contributor can track its own send success.
 	private static java.util.function.Consumer<Throwable> reportCompletionListener = error -> {
 	};
+	// True once SkyMelloo has registered - reports identify as SkyMelloo (not just "a mod") so the
+	// server can still tell the two apart, now that only this mod's report ever reaches the network.
+	private static volatile boolean skyMellooInstalled = false;
 
 	private static final Map<UUID, Map<String, Integer>> otherCosmetics = new ConcurrentHashMap<>();
 	private static final Map<UUID, Map<String, String>> otherParticleKinds = new ConcurrentHashMap<>();
@@ -80,6 +83,11 @@ public final class PresenceManager {
 		reportCompletionListener = listener;
 	}
 
+	/** Call once at SkyMelloo startup - see the field's own doc comment. */
+	public static void setSkyMellooInstalled(boolean installed) {
+		skyMellooInstalled = installed;
+	}
+
 	public static void tick(Minecraft client) {
 		if (client.player == null || client.getConnection() == null) {
 			return;
@@ -115,7 +123,7 @@ public final class PresenceManager {
 		String finalLocation = location;
 		ModAuthManager.getIdentity(client)
 				.exceptionally(error -> null)
-				.thenCompose(identity -> ApiClient.reportPresence(uuid, username, cosmetics, status, dungeonSync, afk, accountLinked, finalLocation, identity))
+				.thenCompose(identity -> ApiClient.reportPresence(uuid, username, cosmetics, status, dungeonSync, afk, accountLinked, finalLocation, skyMellooInstalled, identity))
 				.whenComplete((v, error) -> {
 					reportInFlight = false;
 					LOGGER.debug(error == null

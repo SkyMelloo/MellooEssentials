@@ -57,12 +57,17 @@ public final class ApiClient {
 	}
 
 	private static CompletableFuture<JsonObject> postJson(String path, JsonObject body, ModAuthManager.ModIdentity identity) {
+		return postJson(path, body, identity, "X-MellooEssentials-Client");
+	}
+
+	/** clientHeaderName lets the presence report identify itself as SkyMelloo when SkyMelloo is installed - see reportPresence. */
+	private static CompletableFuture<JsonObject> postJson(String path, JsonObject body, ModAuthManager.ModIdentity identity, String clientHeaderName) {
 		byte[] bodyBytes = body.toString().getBytes(StandardCharsets.UTF_8);
 		HttpRequest.Builder builder = HttpRequest.newBuilder()
 				.uri(URI.create(BASE_URL + path))
 				.timeout(Duration.ofSeconds(8))
 				.header("Content-Type", "application/json")
-				.header("X-MellooEssentials-Client", "mod")
+				.header(clientHeaderName, "mod")
 				.POST(HttpRequest.BodyPublishers.ofByteArray(bodyBytes));
 		if (identity != null) {
 			attachSignature(builder, identity, "POST", requestPath(path), bodyBytes);
@@ -180,8 +185,13 @@ public final class ApiClient {
 	public record PresenceEntry(String uuid, String username, List<String> cosmetics, String role, boolean skymelloo, String status, JsonObject dungeonSync) {
 	}
 
-	/** dungeonSync/location may be null - only SkyMelloo (via its PresenceManager extension points) ever has either. */
-	public static CompletableFuture<Void> reportPresence(String uuid, String username, List<String> cosmetics, String status, JsonObject dungeonSync, boolean afk, boolean accountLinked, String location, ModAuthManager.ModIdentity identity) {
+	/**
+	 * dungeonSync/location may be null - only SkyMelloo (via its PresenceManager extension points) ever
+	 * has either. asSkyMelloo sends X-SkyMelloo-Client instead of X-MellooEssentials-Client - the
+	 * server's only signal for the mod-user marker's pink-vs-light-blue choice (see PresenceEntry's
+	 * doc comment) - when SkyMelloo is installed and contributing to this report.
+	 */
+	public static CompletableFuture<Void> reportPresence(String uuid, String username, List<String> cosmetics, String status, JsonObject dungeonSync, boolean afk, boolean accountLinked, String location, boolean asSkyMelloo, ModAuthManager.ModIdentity identity) {
 		JsonObject body = new JsonObject();
 		body.addProperty("uuid", uuid);
 		body.addProperty("username", username);
@@ -199,7 +209,8 @@ public final class ApiClient {
 		if (location != null) {
 			body.addProperty("location", location);
 		}
-		return postJson("/presence", body, identity).thenApply(root -> null);
+		String clientHeader = asSkyMelloo ? "X-SkyMelloo-Client" : "X-MellooEssentials-Client";
+		return postJson("/presence", body, identity, clientHeader).thenApply(root -> null);
 	}
 
 	public static CompletableFuture<List<PresenceEntry>> queryPresence(List<String> uuids, ModAuthManager.ModIdentity identity) {
