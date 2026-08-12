@@ -118,7 +118,10 @@ public final class ConnectionStatusHud implements HudElement {
 		// Text gutter widened from 10px to 20px (see dotCx/textX below) - the dot's halo was nearly
 		// touching both the accent stripe and the text at its peak pulse size, a live report confirmed
 		// visible overlap. +20 -> +30 keeps the panel's own right-hand padding proportional to that.
-		int width = Math.max(client.font.width(headline), client.font.width(detail)) + 30;
+		// +30 -> +42: the role-badge headline ("Connected as <Role> ★") visibly stuck out past the
+		// box's right edge, a real report - the trailing "★" glyph measures narrower than it actually
+		// renders, so the fixed +30 slack wasn't enough once the headline got this much longer.
+		int width = Math.max(client.font.width(headline), client.font.width(detail)) + 42;
 		int height = 26;
 
 		// Panel: the same (x-4, y-3) dark-glass-fill origin every other HUD in both mods uses (keeps
