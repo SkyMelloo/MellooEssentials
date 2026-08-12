@@ -118,6 +118,9 @@ public final class PresenceManager {
 		boolean accountLinked = AccountLinkStatus.isLinked();
 		String location = HypixelLocationTracker.getMap();
 		if (location == null) {
+			location = HypixelLocationTracker.getServerTypeName();
+		}
+		if (location == null) {
 			location = HypixelLocationTracker.getMode();
 		}
 		String finalLocation = location;

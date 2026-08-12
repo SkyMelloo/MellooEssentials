@@ -20,6 +20,7 @@ public final class HypixelLocationTracker {
 	private static boolean initialized = false;
 	private static volatile String lastMode = null;
 	private static volatile String lastMap = null;
+	private static volatile String lastServerTypeName = null;
 
 	private HypixelLocationTracker() {
 	}
@@ -33,12 +34,16 @@ public final class HypixelLocationTracker {
 		HypixelModAPI.getInstance().createHandler(ClientboundLocationPacket.class, packet -> {
 			String mode = packet.getMode().orElse(null);
 			String map = packet.getMap().orElse(null);
-			if (Objects.equals(mode, lastMode) && Objects.equals(map, lastMap)) {
+			// A hub/lobby has no mode/map at all (those are per-game concepts) - this is what's
+			// actually populated there instead, e.g. LobbyType.MAIN's name is "Main Lobby".
+			String serverTypeName = packet.getServerType().map(net.hypixel.data.type.ServerType::getName).orElse(null);
+			if (Objects.equals(mode, lastMode) && Objects.equals(map, lastMap) && Objects.equals(serverTypeName, lastServerTypeName)) {
 				return;
 			}
 			lastMode = mode;
 			lastMap = map;
-			LOGGER.debug("Hypixel location changed - server=" + packet.getServerName() + ", mode=" + mode + ", map=" + map);
+			lastServerTypeName = serverTypeName;
+			LOGGER.debug("Hypixel location changed - server=" + packet.getServerName() + ", type=" + serverTypeName + ", mode=" + mode + ", map=" + map);
 		});
 	}
 
@@ -48,6 +53,11 @@ public final class HypixelLocationTracker {
 
 	public static String getMap() {
 		return lastMap;
+	}
+
+	/** Readable server-type name (e.g. "Main Lobby", "Bed Wars") - populated even when {@link #getMap()} isn't, since a hub has no map/mode concept at all. */
+	public static String getServerTypeName() {
+		return lastServerTypeName;
 	}
 
 	/** Best-effort only - see the class doc comment. Confirm the real mode/map values from the debug log before relying on this for anything that actually gates behavior. */

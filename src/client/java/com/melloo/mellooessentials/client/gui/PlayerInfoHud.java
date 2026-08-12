@@ -98,9 +98,12 @@ public final class PlayerInfoHud implements HudElement {
 		if (server != null && server.ip != null) {
 			lines.add("§r" + Lang.s("mellooessentials.hud.player_info.server") + ": §f" + server.ip);
 		}
-		// Falls back to the mode (e.g. "LOBBY") when there's no map name - same fallback
-		// PresenceManager already uses, since hubs/lobbies report a mode but no map.
+		// Falls back to the server-type name (e.g. "Main Lobby") when there's no map, since a hub
+		// has no map/mode at all - then to the raw mode string as a last resort.
 		String area = HypixelLocationTracker.getMap();
+		if (area == null) {
+			area = HypixelLocationTracker.getServerTypeName();
+		}
 		if (area == null) {
 			area = HypixelLocationTracker.getMode();
 		}
