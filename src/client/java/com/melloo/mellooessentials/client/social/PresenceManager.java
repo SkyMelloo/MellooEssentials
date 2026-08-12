@@ -1,8 +1,10 @@
 package com.melloo.mellooessentials.client.social;
 
+import com.google.gson.JsonObject;
 import com.melloo.mellooessentials.client.api.ApiClient;
 import com.melloo.mellooessentials.client.api.ModAuthManager;
 import com.melloo.mellooessentials.client.config.EssentialsConfig;
+import com.melloo.mellooessentials.client.util.AfkDetector;
 import net.minecraft.client.Minecraft;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,15 +18,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 /**
- * Detects other players also running MellooEssentials, via sky.melloo.me's EXISTING presence
- * rendezvous (see ApiClient's own doc comment - no new server-side code at all). Each client
- * reports its own UUID + currently-enabled cosmetics every ~2s, and periodically asks which of the
- * players in the current tab list have reported in recently, getting back both their cosmetics AND
- * their server-resolved sky.melloo.me team role (for the fixed pink staff highlight). Purely
- * additive - a network hiccup just means nobody's cosmetics/staff status syncs for a bit, nothing
- * else breaks. Always on, not user-togglable.
+ * The single presence report/query loop for both mods - detects other players also running either
+ * mod, via sky.melloo.me's presence rendezvous. Each client reports its own UUID + cosmetics +
+ * status/AFK/account-link/location every ~2s, and periodically asks which of the players in the
+ * current tab list have reported in recently, getting back their cosmetics, sky.melloo.me team role,
+ * and (for SkyMelloo users) their live dungeon-sync data. Purely additive - a network hiccup just
+ * means nobody's presence syncs for a bit, nothing else breaks. Always on, not user-togglable.
+ *
+ * <p>SkyMelloo used to run a second, independent report/query loop against this exact same endpoint -
+ * removed in favor of registering into the extension points below, since two uncoordinated loops for
+ * the same account were racing each other and silently overwriting one another's data server-side.
  */
 public final class PresenceManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger("MellooEssentials/PresenceManager");
@@ -35,9 +41,24 @@ public final class PresenceManager {
 	private static volatile boolean reportInFlight = false;
 	private static volatile boolean queryInFlight = false;
 
+	// Optional contributions from other mods (SkyMelloo) folded into this mod's own single report -
+	// null/empty by default, never required. Same static-setter extension-point idiom used everywhere
+	// else in this codebase (HighlightManager#setPartyBlinkColorOverride, etc.).
+	private static Supplier<String> statusTextSupplier = () -> "";
+	private static Supplier<JsonObject> dungeonSyncSupplier = () -> null;
+	private static Supplier<List<String>> extraCosmeticsSupplier = List::of;
+	private static DungeonSyncListener dungeonSyncListener = (uuid, username, payload) -> {
+	};
+	// Fired after every report attempt (null = succeeded) - lets a contributor (e.g. SkyMelloo's own
+	// boss-room-send diagnostics) know whether ITS data actually reached the server, since this mod's
+	// own report is the only thing that ever calls the network.
+	private static java.util.function.Consumer<Throwable> reportCompletionListener = error -> {
+	};
+
 	private static final Map<UUID, Map<String, Integer>> otherCosmetics = new ConcurrentHashMap<>();
 	private static final Map<UUID, Map<String, String>> otherParticleKinds = new ConcurrentHashMap<>();
 	private static final Map<UUID, String> otherRoles = new ConcurrentHashMap<>();
+	private static final Map<UUID, String> otherStatusText = new ConcurrentHashMap<>();
 	// Which presence entries also reported via SkyMelloo's own client recently (server-resolved from
 	// the report's client header, see ApiClient.PresenceEntry's doc comment) - this, not generic
 	// isModUser (true for ANY mod, since both mods share the same /presence endpoint), is the real
@@ -47,10 +68,42 @@ public final class PresenceManager {
 	private PresenceManager() {
 	}
 
+	@FunctionalInterface
+	public interface DungeonSyncListener {
+		void onDungeonSync(String uuid, String username, JsonObject payload);
+	}
+
+	/** A short custom status line to fold into this mod's own report - e.g. SkyMelloo's user-set status text. */
+	public static void setStatusTextSupplier(Supplier<String> supplier) {
+		statusTextSupplier = supplier;
+	}
+
+	/** SkyMelloo's opaque live-dungeon payload, forwarded as-is - called fresh on every report, return null when there's nothing to share. */
+	public static void setDungeonSyncSupplier(Supplier<JsonObject> supplier) {
+		dungeonSyncSupplier = supplier;
+	}
+
+	/** Extra cosmetic effect keys to fold into the combined outgoing list (e.g. SkyMelloo's "magicMissile") - not user-configurable cosmetics, those stay this mod's own {@link #collectEnabledCosmetics}. */
+	public static void setExtraCosmeticsSupplier(Supplier<List<String>> supplier) {
+		extraCosmeticsSupplier = supplier;
+	}
+
+	/** Fired once per nearby entry that reported dungeonSync data, each query cycle - lets SkyMelloo react without running its own query loop. */
+	public static void setDungeonSyncListener(DungeonSyncListener listener) {
+		dungeonSyncListener = listener;
+	}
+
+	/** Fired after every report attempt, null error = succeeded - see the field's own doc comment. */
+	public static void setReportCompletionListener(java.util.function.Consumer<Throwable> listener) {
+		reportCompletionListener = listener;
+	}
+
 	public static void tick(Minecraft client) {
 		if (client.player == null || client.getConnection() == null) {
 			return;
 		}
+		AfkDetector.tick(client);
+		AccountLinkStatus.tick(client);
 		tickCounter++;
 		if (tickCounter % REPORT_INTERVAL_TICKS == 0) {
 			reportSelf(client);
@@ -67,15 +120,26 @@ public final class PresenceManager {
 		reportInFlight = true;
 		String uuid = client.player.getUUID().toString();
 		String username = client.player.getGameProfile().name();
-		List<String> cosmetics = collectEnabledCosmetics();
+		List<String> cosmetics = new ArrayList<>(collectEnabledCosmetics());
+		cosmetics.addAll(extraCosmeticsSupplier.get());
+		String status = statusTextSupplier.get();
+		JsonObject dungeonSync = dungeonSyncSupplier.get();
+		boolean afk = AfkDetector.isAfk();
+		boolean accountLinked = AccountLinkStatus.isLinked();
+		String location = HypixelLocationTracker.getMap();
+		if (location == null) {
+			location = HypixelLocationTracker.getMode();
+		}
+		String finalLocation = location;
 		ModAuthManager.getIdentity(client)
 				.exceptionally(error -> null)
-				.thenCompose(identity -> ApiClient.reportPresence(uuid, username, cosmetics, identity))
+				.thenCompose(identity -> ApiClient.reportPresence(uuid, username, cosmetics, status, dungeonSync, afk, accountLinked, finalLocation, identity))
 				.whenComplete((v, error) -> {
 					reportInFlight = false;
 					LOGGER.debug(error == null
 							? "Presence: reported self (" + cosmetics.size() + " cosmetic(s) active)."
 							: "Presence: self-report failed (" + error.getMessage() + ").");
+					reportCompletionListener.accept(error);
 				});
 	}
 
@@ -109,6 +173,7 @@ public final class PresenceManager {
 					Map<UUID, Map<String, Integer>> updatedCosmetics = new HashMap<>();
 					Map<UUID, Map<String, String>> updatedParticleKinds = new HashMap<>();
 					Map<UUID, String> updatedRoles = new HashMap<>();
+					Map<UUID, String> updatedStatus = new HashMap<>();
 					Set<UUID> updatedIsSkyMelloo = new HashSet<>();
 					for (ApiClient.PresenceEntry entry : present) {
 						UUID uuid;
@@ -148,6 +213,12 @@ public final class PresenceManager {
 						if (entry.skymelloo()) {
 							updatedIsSkyMelloo.add(uuid);
 						}
+						if (entry.status() != null && !entry.status().isBlank()) {
+							updatedStatus.put(uuid, entry.status());
+						}
+						if (entry.dungeonSync() != null) {
+							dungeonSyncListener.onDungeonSync(entry.uuid(), entry.username(), entry.dungeonSync());
+						}
 					}
 					otherCosmetics.clear();
 					otherCosmetics.putAll(updatedCosmetics);
@@ -157,7 +228,14 @@ public final class PresenceManager {
 					otherRoles.putAll(updatedRoles);
 					otherIsSkyMelloo.clear();
 					otherIsSkyMelloo.addAll(updatedIsSkyMelloo);
+					otherStatusText.clear();
+					otherStatusText.putAll(updatedStatus);
 				});
+	}
+
+	/** That player's custom status text, or "" if they haven't set one (or aren't a known mod user). */
+	public static String getStatusText(UUID uuid) {
+		return otherStatusText.getOrDefault(uuid, "");
 	}
 
 	public static boolean isModUser(UUID uuid) {

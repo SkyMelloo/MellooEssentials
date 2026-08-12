@@ -176,11 +176,12 @@ public final class ApiClient {
 
 	// ---- presence (cosmetics sync + role lookup) ----
 
-	/** cosmetics: e.g. "halo:AA33FF" (custom color) or "cherryBlossom" (default color) - see PresenceManager. role is sky.melloo.me's server-resolved team role ("owner"/"admin"/"developer"/"moderator"), or null. skymelloo is true if this uuid has also reported presence via SkyMelloo's own client recently (server tells the two mod clients apart by which of X-SkyMelloo-Client/X-MellooEssentials-Client header showed up on the report) - this is the actual signal the mod-user marker's pink/light-blue choice is based on, see PresenceManager#isSkyMelloo. */
-	public record PresenceEntry(String uuid, String username, List<String> cosmetics, String role, boolean skymelloo) {
+	/** cosmetics: e.g. "halo:AA33FF" (custom color) or "cherryBlossom" (default color) - see PresenceManager. role is sky.melloo.me's server-resolved team role ("owner"/"admin"/"developer"/"moderator"), or null. skymelloo is true if this uuid has also reported presence via SkyMelloo's own client recently (server tells the two mod clients apart by which of X-SkyMelloo-Client/X-MellooEssentials-Client header showed up on the report) - this is the actual signal the mod-user marker's pink/light-blue choice is based on, see PresenceManager#isSkyMelloo. dungeonSync is SkyMelloo's own opaque live-dungeon payload, forwarded as-is - null unless that uuid is running SkyMelloo and currently in a dungeon with sync enabled. */
+	public record PresenceEntry(String uuid, String username, List<String> cosmetics, String role, boolean skymelloo, String status, JsonObject dungeonSync) {
 	}
 
-	public static CompletableFuture<Void> reportPresence(String uuid, String username, List<String> cosmetics, ModAuthManager.ModIdentity identity) {
+	/** dungeonSync/location may be null - only SkyMelloo (via its PresenceManager extension points) ever has either. */
+	public static CompletableFuture<Void> reportPresence(String uuid, String username, List<String> cosmetics, String status, JsonObject dungeonSync, boolean afk, boolean accountLinked, String location, ModAuthManager.ModIdentity identity) {
 		JsonObject body = new JsonObject();
 		body.addProperty("uuid", uuid);
 		body.addProperty("username", username);
@@ -189,9 +190,15 @@ public final class ApiClient {
 			cosmeticsArr.add(c);
 		}
 		body.add("cosmetics", cosmeticsArr);
-		body.addProperty("status", "");
-		body.addProperty("afk", false);
-		body.addProperty("accountLinked", false);
+		body.addProperty("status", status != null ? status : "");
+		if (dungeonSync != null) {
+			body.add("dungeonSync", dungeonSync);
+		}
+		body.addProperty("afk", afk);
+		body.addProperty("accountLinked", accountLinked);
+		if (location != null) {
+			body.addProperty("location", location);
+		}
 		return postJson("/presence", body, identity).thenApply(root -> null);
 	}
 
@@ -223,7 +230,9 @@ public final class ApiClient {
 					}
 					String role = entry.has("role") && !entry.get("role").isJsonNull() ? entry.get("role").getAsString() : null;
 					boolean skymelloo = entry.has("skymelloo") && !entry.get("skymelloo").isJsonNull() && entry.get("skymelloo").getAsBoolean();
-					result.add(new PresenceEntry(uuid, username, cosmetics, role, skymelloo));
+					String status = entry.has("status") && !entry.get("status").isJsonNull() ? entry.get("status").getAsString() : null;
+					JsonObject dungeonSync = entry.has("dungeonSync") && entry.get("dungeonSync").isJsonObject() ? entry.getAsJsonObject("dungeonSync") : null;
+					result.add(new PresenceEntry(uuid, username, cosmetics, role, skymelloo, status, dungeonSync));
 				}
 			}
 			return result;
