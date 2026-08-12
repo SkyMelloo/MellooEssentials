@@ -1,5 +1,10 @@
 # MellooEssentials
 
+[![License: AGPL v3](https://img.shields.io/badge/license-AGPLv3-blue.svg)](LICENSE)
+[![Minecraft](https://img.shields.io/badge/minecraft-26.1.2-brightgreen.svg)](https://fabricmc.net/)
+[![Loader](https://img.shields.io/badge/loader-fabric-e5a00d.svg)](https://fabricmc.net/)
+[![Website](https://img.shields.io/badge/website-sky.melloo.me-informational.svg)](https://sky.melloo.me)
+
 A lightweight [Fabric](https://fabricmc.net/) client mod for Hypixel: party/team highlighting, a
 mod-native friends system, and cloud-synced settings - no sky.melloo.me account needed. Downloaded
 from [sky.melloo.me/download](https://sky.melloo.me/download).
