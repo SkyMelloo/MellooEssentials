@@ -8,7 +8,6 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 
-import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 /**
@@ -27,14 +26,14 @@ public final class ConnectionStatusHud implements HudElement {
 	// Populated by SkyMelloo (when installed) - see SkyMellooClient#onInitializeClient. Left null
 	// when only this mod is installed, since neither concept (an admin-linked account, a
 	// sky.melloo.me API ping reading) exists here on its own.
-	private static volatile BooleanSupplier adminBadgeSupplier = null;
+	private static volatile Supplier<String> adminBadgeSupplier = null;
 	private static volatile Supplier<String> extraLineProvider = null;
 
 	private ConnectionStatusHud() {
 	}
 
-	/** Whether the CONNECTED line should show an "(Admin)" suffix - true only for an account verified-linked to the sky.melloo.me admin/dev/owner team, a SkyMelloo-only concept. */
-	public static void setAdminBadgeSupplier(BooleanSupplier supplier) {
+	/** The account's actual highest role label (e.g. "Owner") to show as "Connected as {role}" - null for a non-admin account, a SkyMelloo-only concept. */
+	public static void setAdminBadgeSupplier(Supplier<String> supplier) {
 		adminBadgeSupplier = supplier;
 	}
 
@@ -85,8 +84,8 @@ public final class ConnectionStatusHud implements HudElement {
 			return;
 		}
 
-		BooleanSupplier adminSupplier = adminBadgeSupplier;
-		boolean isAdmin = adminSupplier != null && adminSupplier.getAsBoolean();
+		Supplier<String> adminSupplier = adminBadgeSupplier;
+		String adminRole = adminSupplier != null ? adminSupplier.get() : null;
 		Supplier<String> extraProvider = extraLineProvider;
 		String extra = extraProvider != null ? extraProvider.get() : null;
 
@@ -95,7 +94,9 @@ public final class ConnectionStatusHud implements HudElement {
 		int statusColor;
 		switch (ModAuthManager.getConnectionState()) {
 			case CONNECTED -> {
-				headline = "§l" + Lang.s("mellooessentials.hud.connection.connected") + (isAdmin ? " §d★" : "");
+				headline = "§l" + (adminRole != null && !adminRole.isEmpty()
+						? Lang.s("mellooessentials.hud.connection.connected_as", adminRole) + " §d★"
+						: Lang.s("mellooessentials.hud.connection.connected"));
 				String duration = formatDuration(System.currentTimeMillis() - ModAuthManager.getConnectedSince());
 				detail = "sky.melloo.me · " + duration + (extra != null ? " · " + extra : "");
 				statusColor = 0xFF55FF55;

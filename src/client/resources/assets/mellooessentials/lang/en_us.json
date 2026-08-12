@@ -225,6 +225,7 @@
 	"mellooessentials.hud.player_info.direction.se": "SE",
 
 	"mellooessentials.hud.connection.connected": "Connected",
+	"mellooessentials.hud.connection.connected_as": "Connected as %s",
 	"mellooessentials.hud.connection.connecting": "Connecting…",
 	"mellooessentials.hud.connection.failed": "Connection Failed",
 	"mellooessentials.hud.connection.see_status": "see sky.melloo.me/status"

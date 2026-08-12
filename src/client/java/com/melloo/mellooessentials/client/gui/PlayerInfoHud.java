@@ -98,9 +98,14 @@ public final class PlayerInfoHud implements HudElement {
 		if (server != null && server.ip != null) {
 			lines.add("§r" + Lang.s("mellooessentials.hud.player_info.server") + ": §f" + server.ip);
 		}
-		String map = HypixelLocationTracker.getMap();
-		if (map != null) {
-			lines.add("§r" + Lang.s("mellooessentials.hud.player_info.area") + ": §f" + map);
+		// Falls back to the mode (e.g. "LOBBY") when there's no map name - same fallback
+		// PresenceManager already uses, since hubs/lobbies report a mode but no map.
+		String area = HypixelLocationTracker.getMap();
+		if (area == null) {
+			area = HypixelLocationTracker.getMode();
+		}
+		if (area != null) {
+			lines.add("§r" + Lang.s("mellooessentials.hud.player_info.area") + ": §f" + area);
 		}
 		if (client.player != null) {
 			lines.add("§r" + Lang.s("mellooessentials.hud.player_info.xyz") + ": §f" + (int) client.player.getX() + " " + (int) client.player.getY() + " " + (int) client.player.getZ());
