@@ -457,7 +457,21 @@ public final class ApiClient {
 
 	/** {@code jarHash} is optional - null when running from a dev/exploded classpath. Unauthenticated - the server's own MellooEssentials-specific route doesn't require a signed identity for this. */
 	public static CompletableFuture<VersionCheckResult> checkVersion(String version, String jarHash) {
-		String url = "/mellooessentials/version-check?version=" + java.net.URLEncoder.encode(version, StandardCharsets.UTF_8)
+		return checkVersionAt("/mellooessentials/version-check", version, jarHash);
+	}
+
+	/**
+	 * Same check, against SkyMelloo's own route instead - this mod's ModVersionManager now checks
+	 * SkyMelloo too (if installed) as well as itself, so a SkyMelloo-only checkOnce isn't needed
+	 * anymore and neither mod duplicates this whole system. See ModVersionManager for how the two
+	 * results are kept separate.
+	 */
+	public static CompletableFuture<VersionCheckResult> checkVersionForSkyMelloo(String version, String jarHash) {
+		return checkVersionAt("/version-check", version, jarHash);
+	}
+
+	private static CompletableFuture<VersionCheckResult> checkVersionAt(String path, String version, String jarHash) {
+		String url = path + "?version=" + java.net.URLEncoder.encode(version, StandardCharsets.UTF_8)
 				+ (jarHash != null ? "&hash=" + java.net.URLEncoder.encode(jarHash, StandardCharsets.UTF_8) : "");
 		return getJson(url, null).thenApply(root -> new VersionCheckResult(
 				root.has("compatible") && root.get("compatible").getAsBoolean(),

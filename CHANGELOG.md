@@ -4,6 +4,10 @@ Internal dev version history - every entry below used to live as a giant stacked
 
 > Versioning scheme, same discipline and starting point as skymelloo (kept as a fully separate counter - this mod's mod_version has nothing to do with skymelloo's own numbers): mod_version below is the INTERNAL/dev version, bumped on every single change so every build has a unique, distinguishable identity - without this, "is the jar I installed actually the latest build" is impossible to answer just by looking at it, which is exactly the confusion that prompted adding this scheme. PATCH (3rd number) for small changes, MINOR (2nd number, patch reset to 0) for bigger features, MAJOR only on explicit instruction. public_version is a separate, hand-maintained user-facing release number, only bumped when a build is actually promoted to public via the sky.melloo.me admin panel.
 
+## 0.13.0 (from 0.12.4) · minor
+
+ModVersionManager now checks SkyMelloo too (if installed), not just itself - Fabric Loader's mod-container registry is global, so this mod can read/hash SkyMelloo's own jar the same way it reads its own, no dependency-direction issue. Fixes a real annoyance: both mods used to run their own completely separate version/integrity check and each fire their own "unofficial build" notice back to back on join. SkyMelloo's own copy of this whole system is deleted - "/sm version"/"/sm legal" now read the new `getSkyMellooXxx()`/`checkSkyMellooNow()` getters here instead.
+
 ## 0.12.4 (from 0.12.3) · patch
 
 Added GitHub issue templates (bug report, feature request) and a PR template under `.github/` - closes out most of the repo's Community Profile checklist. No functional change.

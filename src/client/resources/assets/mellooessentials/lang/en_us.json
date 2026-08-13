@@ -20,7 +20,7 @@
 	"mellooessentials.command.help.version": "§a/mellooessentials version §7- mod version & update status (checked live)",
 	"mellooessentials.command.help.legal": "§a/mellooessentials legal §7- imprint, privacy policy, terms (links)",
 
-	"mellooessentials.chat.version.unofficial_build": "§eYou're on an unofficial MellooEssentials build (not one %s built/signed) - everything still works, this is just so you know. Official builds: §fsky.melloo.me/download",
+	"mellooessentials.chat.version.unofficial_build": "§eYou're on an unofficial %s build (not one %s built/signed) - everything still works, this is just so you know. Official builds: §fsky.melloo.me/download",
 	"mellooessentials.command.version.header": "§6=== MellooEssentials Version ===",
 	"mellooessentials.command.version.running": "§dRunning: §fv%1$s §7(dev %2$s)§7  ·  §djarHash: §f%3$s",
 	"mellooessentials.command.version.jarhash_unknown": "unknown (dev/exploded classpath)",
