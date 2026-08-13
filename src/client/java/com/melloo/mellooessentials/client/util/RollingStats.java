@@ -11,6 +11,13 @@ import java.util.List;
  * stutter-sensitive metric FPS benchmarks use, since a plain average hides brief bad spikes. For a
  * metric where HIGHER is worse (ping), use {@link #worstAverage(boolean)} with {@code false} to get
  * the worst-1%-HIGH average instead - the equivalent "worst case" reading for that direction.
+ * <p>
+ * Every public method is synchronized - a real crash confirmed this needs to be thread-safe:
+ * {@link com.melloo.mellooessentials.client.gui.TpsEstimator} feeds samples in from a packet-handler
+ * mixin (the client/game thread), while the HUD reads them back on the render thread, and
+ * {@link ArrayDeque} isn't safe for that at all (a plain unsynchronized read-while-write threw
+ * {@link java.util.ConcurrentModificationException} out of {@link #worstAverage(boolean)}'s
+ * stream). Contention is negligible either way - one write a second at most, cheap reads.
  */
 public final class RollingStats {
 	private record Sample(long timestampMillis, double value) {
@@ -23,7 +30,7 @@ public final class RollingStats {
 		this.windowMillis = windowSeconds * 1000L;
 	}
 
-	public void addSample(double value) {
+	public synchronized void addSample(double value) {
 		long now = System.currentTimeMillis();
 		samples.addLast(new Sample(now, value));
 		long cutoff = now - windowMillis;
@@ -32,11 +39,11 @@ public final class RollingStats {
 		}
 	}
 
-	public boolean hasSamples() {
+	public synchronized boolean hasSamples() {
 		return !samples.isEmpty();
 	}
 
-	public double average() {
+	public synchronized double average() {
 		if (samples.isEmpty()) {
 			return 0;
 		}
@@ -48,7 +55,7 @@ public final class RollingStats {
 	}
 
 	/** @param lowest true for "1% lows" (worst-case where LOWER is worse, e.g. FPS/TPS), false for the worst-case where HIGHER is worse (e.g. ping spikes). */
-	public double worstAverage(boolean lowest) {
+	public synchronized double worstAverage(boolean lowest) {
 		if (samples.isEmpty()) {
 			return 0;
 		}
