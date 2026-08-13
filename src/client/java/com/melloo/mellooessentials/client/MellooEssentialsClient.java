@@ -14,6 +14,7 @@ import com.melloo.mellooessentials.client.party.PartyTracker;
 import com.melloo.mellooessentials.client.social.ConnectionStatusHud;
 import com.melloo.mellooessentials.client.social.FriendsManager;
 import com.melloo.mellooessentials.client.social.HypixelLocationTracker;
+import com.melloo.mellooessentials.client.social.PartyGamesManager;
 import com.melloo.mellooessentials.client.social.PresenceManager;
 import com.melloo.mellooessentials.client.social.RelayChatManager;
 import com.melloo.mellooessentials.client.social.StaffEncounterTracker;
@@ -22,7 +23,9 @@ import com.melloo.mellooessentials.client.util.CloudSyncManager;
 import com.melloo.mellooessentials.client.util.HypixelDetector;
 import com.melloo.mellooessentials.client.util.Lang;
 import com.melloo.mellooessentials.client.util.ModVersionManager;
+import com.melloo.mellooessentials.client.util.PartyChatSender;
 import com.melloo.mellooessentials.client.util.ServerPingMonitor;
+import com.melloo.mellooessentials.client.util.TickDelay;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.api.ClientModInitializer;
@@ -78,6 +81,8 @@ public class MellooEssentialsClient implements ClientModInitializer {
 
 		PartyTracker.init();
 		PartyKickQueue.init();
+		PartyGamesManager.init();
+		PartyChatSender.init();
 		HypixelLocationTracker.init();
 
 		HudElementRegistry.addLast(Identifier.fromNamespaceAndPath(MOD_ID, "player_info"), PlayerInfoHud.INSTANCE);
@@ -113,6 +118,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 			RelayChatManager.tick(client);
 			StaffEncounterTracker.tick(client);
 			CloudSyncManager.pullIfNeeded(client);
+			TickDelay.tick();
 
 			// Everything else is Hypixel-only - no reason to run party tracking/cosmetics/presence on
 			// any other server.
@@ -141,6 +147,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 							.then(RelayChatManager.buildChatCommand())
 							.then(BlockedUsersManager.buildBlockCommand())
 							.then(BlockedUsersManager.buildUnblockCommand())
+							.then(PartyGamesManager.buildRollCommand())
 							// Named after the German "Staff getroffen" ("met/encountered staff") - a running
 							// list of every real staff/owner member you've ever shared a tab list with,
 							// anywhere (see StaffEncounterTracker, which keeps scanning regardless of server).
@@ -289,6 +296,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.chat")));
 		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.hitstaff")));
 		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.block")));
+		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.roll")));
 		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.verify")));
 		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.version")));
 		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.legal")));

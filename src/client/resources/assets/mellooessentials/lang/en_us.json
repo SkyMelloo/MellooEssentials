@@ -96,6 +96,14 @@
 	"mellooessentials.chat.party.send_failed": "§cCouldn't send to party.",
 	"mellooessentials.command.chat.usage": "§cUsage: §f/mes chat party <message>§7 or §f/mes chat <name> <message>",
 
+	"mellooessentials.chat.party_games.roll_member_result": "§dRandomly picked: §e%s§d!",
+	"mellooessentials.chat.party_games.roll_result": "§dRolled §e%s§d (1-%s)!",
+	"mellooessentials.chat.party_games.roll_root_usage": "§cUsage: §f/mes roll <amount>§7, §f/mes roll party§7, or §f/mes roll <word> <seconds>",
+	"mellooessentials.chat.party_games.word_roll_no_entrants": "§dNobody typed §e%s§d - no entrants.",
+	"mellooessentials.chat.party_games.word_roll_start": "§dType §e%s§d in party chat within §e%ss§d to enter!",
+	"mellooessentials.chat.party_games.word_roll_winner": "§dWinner of §e%s§d (%s entrants): §e%s§d!",
+	"mellooessentials.command.help.roll": "§a/mellooessentials roll <amount>§7/§aroll party§7/§aroll <word> <secs> §7- random pick in the party",
+
 	"mellooessentials.chat.error.timeout": "Timed out - server not responding",
 
 	"mellooessentials.particle.heart": "Heart",

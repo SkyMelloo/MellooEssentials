@@ -5,16 +5,28 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 
+import java.util.regex.Pattern;
+
 /** Consistent chat message formatting for all MellooEssentials output - mirrors SkyMelloo's own ChatUtil, light-blue brand gradient instead of SkyMelloo's pink (matching the mod-user marker/website's own light-blue vs. pink distinction between the two mods). */
 public final class ChatUtil {
 	private static final int GRADIENT_START = 0x66DDFF;
 	private static final int GRADIENT_END = 0x3FA9D9;
+	private static final Pattern FORMAT_CODE = Pattern.compile("§[0-9A-FK-ORa-fk-or]");
 
 	private ChatUtil() {
 	}
 
 	public static MutableComponent prefixed(String message) {
 		return prefixed(Component.literal(message));
+	}
+
+	/**
+	 * Strips §-color codes and prepends a plain "[MellooEssentials] " prefix - for text sent through
+	 * {@code /pc} as a command string, which doesn't survive § codes intact (see SkyMelloo's own
+	 * ChatUtil#partyPrefixed for the confirmed root cause).
+	 */
+	public static String partyPrefixed(String message) {
+		return "[MellooEssentials] " + FORMAT_CODE.matcher(message).replaceAll("");
 	}
 
 	/** Like {@link #prefixed(String)}, but for a message that needs rich formatting (click/hover events, mixed colors) rather than a plain string. */
