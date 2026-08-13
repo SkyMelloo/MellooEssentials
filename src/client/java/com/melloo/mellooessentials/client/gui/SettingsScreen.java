@@ -132,6 +132,11 @@ public class SettingsScreen extends Screen {
 		switch (currentTab) {
 			case GENERAL -> {
 				rows.add(infoRow(Lang.s("mellooessentials.gui.settings.general.always_active")));
+				// Everything else this mod (or SkyMelloo, which hooks into the same report) shares about
+				// you depends on this - grouped as its own section rather than buried among unrelated
+				// rows, so it's obvious at a glance there's one place to shut it all off for privacy.
+				rows.add(headerRow(Lang.s("mellooessentials.gui.settings.header.sharing_privacy")));
+				rows.add(boolRow(Lang.s("mellooessentials.gui.settings.sharing_privacy.sync"), () -> c.presenceSharingEnabled, v -> c.presenceSharingEnabled = v));
 				rows.add(headerRow(Lang.s("mellooessentials.gui.settings.friend_highlighting")));
 				rows.add(highlightColorRow(Lang.s("mellooessentials.gui.settings.friend_highlighting"), () -> c.friendHighlightEnabled, v -> c.friendHighlightEnabled = v,
 						() -> c.friendGlowOutlineEnabled, v -> c.friendGlowOutlineEnabled = v,

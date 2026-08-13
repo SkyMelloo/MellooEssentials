@@ -113,7 +113,10 @@ public final class PresenceManager {
 	}
 
 	private static void reportSelf(Minecraft client) {
-		if (reportInFlight) {
+		// Master privacy switch (see EssentialsConfig#presenceSharingEnabled) - off means no report
+		// is sent at all, not just a reduced one. Checked before reportInFlight so toggling this off
+		// never leaves that flag stuck true.
+		if (!EssentialsConfig.get().presenceSharingEnabled || reportInFlight) {
 			return;
 		}
 		reportInFlight = true;

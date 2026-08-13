@@ -181,6 +181,8 @@
 	"mellooessentials.gui.settings.tab.cosmetics": "Cosmetics",
 	"mellooessentials.gui.settings.tab.cloud": "Cloud",
 	"mellooessentials.gui.settings.general.always_active": "Party and team highlighting are always active.",
+	"mellooessentials.gui.settings.header.sharing_privacy": "Sharing & Privacy",
+	"mellooessentials.gui.settings.sharing_privacy.sync": "Share presence (online status, location, cosmetics) with sky.melloo.me",
 	"mellooessentials.gui.settings.friend_highlighting": "Friend Highlighting",
 	"mellooessentials.gui.settings.header.hud": "HUD",
 	"mellooessentials.gui.settings.general.player_info_hud": "Player Info HUD (FPS/ping/TPS/server/area/coords/facing)",

@@ -106,9 +106,17 @@ public final class EssentialsConfig {
 
 	public boolean cloudSyncEnabled = true;
 
+	// ---- Sharing & Privacy ----
+	// Master switch for presence reporting itself - everything else this mod (or SkyMelloo, which
+	// hooks into the same report) shares about you (online status, location, cosmetics) depends on
+	// this being on. Off means no presence report is sent at all, not just a reduced one. Moved here
+	// from SkyMelloo (was presenceSharingEnabled there, same field/semantics) since it's a general
+	// account-privacy setting, not SkyBlock/dungeon-specific.
+	public boolean presenceSharingEnabled = false;
+
 	// ---- Cosmetics ----
 	// Same effect set/defaults as SkyMelloo's CosmeticsRenderer. Visible to other Hypixel
-	// Essentials (or SkyMelloo) users nearby - presence sync is always on, see PresenceManager.
+	// Essentials (or SkyMelloo) users nearby via presence sync (see presenceSharingEnabled above).
 
 	public boolean cosmeticsEnabled = true;
 
