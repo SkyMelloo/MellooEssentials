@@ -21,6 +21,7 @@ import com.melloo.mellooessentials.client.util.ChatUtil;
 import com.melloo.mellooessentials.client.util.CloudSyncManager;
 import com.melloo.mellooessentials.client.util.HypixelDetector;
 import com.melloo.mellooessentials.client.util.Lang;
+import com.melloo.mellooessentials.client.util.ModVersionManager;
 import com.melloo.mellooessentials.client.util.ServerPingMonitor;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -122,6 +123,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 			PartyTracker.tick();
 			CosmeticsRenderer.tick(client);
 			PresenceManager.tick(client);
+			ModVersionManager.checkOnce(client);
 		});
 
 		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
@@ -205,9 +207,76 @@ public class MellooEssentialsClient implements ClientModInitializer {
 												);
 										return 1;
 									})))
+							.then(ClientCommands.literal("version").executes(ctx -> {
+								String version = ModVersionManager.getLocalVersion();
+								String publicVersion = ModVersionManager.getPublicVersion();
+								String jarHash = ModVersionManager.getLocalJarHash();
+								ctx.getSource().sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.version.header")));
+								net.minecraft.network.chat.Component jarHashText = jarHash != null ? net.minecraft.network.chat.Component.literal(jarHash) : Lang.c("mellooessentials.command.version.jarhash_unknown");
+								ctx.getSource().sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.version.running", publicVersion, version, jarHashText)));
+								ctx.getSource().sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.version.checking")));
+								ModVersionManager.checkNow(
+										result -> {
+											Minecraft c = Minecraft.getInstance();
+											if (c.player == null) {
+												return;
+											}
+											if (result == null) {
+												c.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.command.version.unreachable")));
+												return;
+											}
+											if (result.latestPublicVersion() != null) {
+												c.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.command.version.latest_published", result.latestPublicVersion())));
+											}
+											if (result.upToDate()) {
+												c.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.command.version.up_to_date")));
+											} else {
+												c.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.command.version.outdated")));
+											}
+											c.player.sendSystemMessage(legalLink(Lang.c("mellooessentials.command.version.get_from_official"), "https://sky.melloo.me/download"));
+										},
+										cooldownSeconds -> {
+											Minecraft c = Minecraft.getInstance();
+											if (c.player == null) {
+												return;
+											}
+											c.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.command.version.cooldown", cooldownSeconds)));
+											c.player.sendSystemMessage(legalLink(Lang.c("mellooessentials.command.version.get_from_official"), "https://sky.melloo.me/download"));
+										}
+								);
+								return 1;
+							}))
+							// Same reasoning as SkyMelloo's "/sm legal" - fetched server-side, gated by the
+							// same build-verification check the integrity system already does.
+							.then(ClientCommands.literal("legal").executes(ctx -> {
+								String jarHash = ModVersionManager.getLocalJarHash();
+								ApiClient.fetchLegalInfo(jarHash).whenComplete((info, error) -> Minecraft.getInstance().execute(() -> {
+									if (error != null || info == null) {
+										var lastResult = ModVersionManager.getLastResult();
+										net.minecraft.network.chat.Component maintainer = lastResult != null && lastResult.maintainerUsername() != null
+												? net.minecraft.network.chat.Component.literal(lastResult.maintainerUsername())
+												: Lang.c("mellooessentials.command.legal.fallback_maintainer");
+										ctx.getSource().sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.legal.not_official")));
+										ctx.getSource().sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.legal.fork_reminder", maintainer)));
+										return;
+									}
+									ctx.getSource().sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.legal.header")));
+									ctx.getSource().sendFeedback(legalLink(Lang.c("mellooessentials.command.legal.label_imprint"), info.imprint()));
+									ctx.getSource().sendFeedback(legalLink(Lang.c("mellooessentials.command.legal.label_privacy"), info.privacy()));
+									ctx.getSource().sendFeedback(legalLink(Lang.c("mellooessentials.command.legal.label_terms"), info.terms()));
+								}));
+								return 1;
+							}))
 			);
 			dispatcher.register(ClientCommands.literal("me").redirect(mellooessentialsNode));
 		});
+	}
+
+	/** Clickable "§dLabel: §fhttps://..." chat line - opens the URL in the system browser. Used by {@code /me legal} and {@code /me version}'s download reminder. */
+	private static net.minecraft.network.chat.MutableComponent legalLink(net.minecraft.network.chat.Component label, String url) {
+		return Lang.c("mellooessentials.command.legal.link_line", label, url).withStyle(style -> style
+				.withClickEvent(new net.minecraft.network.chat.ClickEvent.OpenUrl(java.net.URI.create(url)))
+				.withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(Lang.c("mellooessentials.command.legal.hover_open_browser"))));
 	}
 
 	private static void sendHelp(net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource source) {
@@ -217,6 +286,8 @@ public class MellooEssentialsClient implements ClientModInitializer {
 		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.hitstaff")));
 		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.block")));
 		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.verify")));
+		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.version")));
+		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.legal")));
 	}
 
 	/** Rough "X ago" duration for /me hitstaff - coarsest unit only (a last-seen from 2 days ago doesn't need minute precision). */

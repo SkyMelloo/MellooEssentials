@@ -445,4 +445,39 @@ public final class ApiClient {
 			return result;
 		}).exceptionally(error -> List.of());
 	}
+
+	/** Same shape as SkyMelloo's own version-check result - see ModVersionManager. */
+	public record VersionCheckResult(boolean compatible, String minVersion, String message, boolean upToDate, String updateAvailableMessage, boolean integrityOk, String buildKind, String latestVersion, String latestPublicVersion, String maintainerUsername) {
+	}
+
+	/** {@code jarHash} is optional - null when running from a dev/exploded classpath. Unauthenticated - the server's own MellooEssentials-specific route doesn't require a signed identity for this. */
+	public static CompletableFuture<VersionCheckResult> checkVersion(String version, String jarHash) {
+		String url = "/mellooessentials/version-check?version=" + java.net.URLEncoder.encode(version, StandardCharsets.UTF_8)
+				+ (jarHash != null ? "&hash=" + java.net.URLEncoder.encode(jarHash, StandardCharsets.UTF_8) : "");
+		return getJson(url, null).thenApply(root -> new VersionCheckResult(
+				root.has("compatible") && root.get("compatible").getAsBoolean(),
+				root.has("minVersion") && !root.get("minVersion").isJsonNull() ? root.get("minVersion").getAsString() : null,
+				root.has("message") && !root.get("message").isJsonNull() ? root.get("message").getAsString() : null,
+				!root.has("upToDate") || root.get("upToDate").getAsBoolean(),
+				root.has("updateAvailableMessage") && !root.get("updateAvailableMessage").isJsonNull() ? root.get("updateAvailableMessage").getAsString() : null,
+				!root.has("integrityOk") || root.get("integrityOk").getAsBoolean(),
+				root.has("buildKind") && !root.get("buildKind").isJsonNull() ? root.get("buildKind").getAsString() : "unknown",
+				root.has("latestVersion") && !root.get("latestVersion").isJsonNull() ? root.get("latestVersion").getAsString() : null,
+				root.has("latestPublicVersion") && !root.get("latestPublicVersion").isJsonNull() ? root.get("latestPublicVersion").getAsString() : null,
+				root.has("maintainerUsername") && !root.get("maintainerUsername").isJsonNull() ? root.get("maintainerUsername").getAsString() : null
+		));
+	}
+
+	public record LegalInfo(String imprint, String privacy, String terms) {
+	}
+
+	/** "/me legal" - shares SkyMelloo's own /legal route (imprint/privacy/terms are mod-agnostic), gated the same way integrity is above. */
+	public static CompletableFuture<LegalInfo> fetchLegalInfo(String jarHash) {
+		String url = "/legal" + (jarHash != null ? "?hash=" + java.net.URLEncoder.encode(jarHash, StandardCharsets.UTF_8) : "");
+		return getJson(url, null).thenApply(root -> new LegalInfo(
+				root.get("imprint").getAsString(),
+				root.get("privacy").getAsString(),
+				root.get("terms").getAsString()
+		));
+	}
 }
