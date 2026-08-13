@@ -129,7 +129,7 @@ public final class PartyKickQueue {
 		line = line.append(Lang.c("mellooessentials.gui.party.block_button").withStyle(style -> style
 				.withColor(ChatFormatting.DARK_RED)
 				.withBold(true)
-				.withClickEvent(new ClickEvent.RunCommand("/me block " + username))
+				.withClickEvent(new ClickEvent.RunCommand("/mes block " + username))
 				.withHoverEvent(new HoverEvent.ShowText(Lang.c("mellooessentials.tooltip.party.block", username)))));
 		BiFunction<String, MutableComponent, MutableComponent> extra = extraJoinAction;
 		if (extra != null) {

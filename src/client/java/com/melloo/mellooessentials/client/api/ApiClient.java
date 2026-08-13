@@ -471,7 +471,7 @@ public final class ApiClient {
 	public record LegalInfo(String imprint, String privacy, String terms) {
 	}
 
-	/** "/me legal" - shares SkyMelloo's own /legal route (imprint/privacy/terms are mod-agnostic), gated the same way integrity is above. */
+	/** "/mes legal" - shares SkyMelloo's own /legal route (imprint/privacy/terms are mod-agnostic), gated the same way integrity is above. */
 	public static CompletableFuture<LegalInfo> fetchLegalInfo(String jarHash) {
 		String url = "/legal" + (jarHash != null ? "?hash=" + java.net.URLEncoder.encode(jarHash, StandardCharsets.UTF_8) : "");
 		return getJson(url, null).thenApply(root -> new LegalInfo(

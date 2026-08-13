@@ -268,11 +268,15 @@ public class MellooEssentialsClient implements ClientModInitializer {
 								return 1;
 							}))
 			);
-			dispatcher.register(ClientCommands.literal("me").redirect(mellooessentialsNode));
+			// "me" collided with vanilla's own "/me <action>" roleplay command - a client-side
+			// command with the same name intercepts the input before it can ever reach the server,
+			// silently breaking vanilla's "/me" for everyone using this mod. "mes" doesn't collide
+			// with anything.
+			dispatcher.register(ClientCommands.literal("mes").redirect(mellooessentialsNode));
 		});
 	}
 
-	/** Clickable "§dLabel: §fhttps://..." chat line - opens the URL in the system browser. Used by {@code /me legal} and {@code /me version}'s download reminder. */
+	/** Clickable "§dLabel: §fhttps://..." chat line - opens the URL in the system browser. Used by {@code /mes legal} and {@code /mes version}'s download reminder. */
 	private static net.minecraft.network.chat.MutableComponent legalLink(net.minecraft.network.chat.Component label, String url) {
 		return Lang.c("mellooessentials.command.legal.link_line", label, url).withStyle(style -> style
 				.withClickEvent(new net.minecraft.network.chat.ClickEvent.OpenUrl(java.net.URI.create(url)))
@@ -290,7 +294,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 		source.sendFeedback(ChatUtil.prefixed(Lang.c("mellooessentials.command.help.legal")));
 	}
 
-	/** Rough "X ago" duration for /me hitstaff - coarsest unit only (a last-seen from 2 days ago doesn't need minute precision). */
+	/** Rough "X ago" duration for /mes hitstaff - coarsest unit only (a last-seen from 2 days ago doesn't need minute precision). */
 	private static String formatAgo(long millisAgo) {
 		long seconds = millisAgo / 1000;
 		if (seconds < 60) {

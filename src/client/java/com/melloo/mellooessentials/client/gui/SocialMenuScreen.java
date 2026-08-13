@@ -138,7 +138,7 @@ public class SocialMenuScreen extends Screen {
 				faces.add(new Face(uuid, x, y));
 			}
 			addRenderableWidget(new SettingsScreen.StyledButton(x + COLUMN_WIDTH - 100, y, 45, 18, Lang.s("mellooessentials.gui.common.chat"), BLUE, () ->
-					Minecraft.getInstance().setScreen(new ChatScreen("/me chat " + friend.username() + " ", true))));
+					Minecraft.getInstance().setScreen(new ChatScreen("/mes chat " + friend.username() + " ", true))));
 			addRenderableWidget(new SettingsScreen.StyledButton(x + COLUMN_WIDTH - 52, y, 52, 18, Lang.s("mellooessentials.gui.common.remove"), RED, () -> FriendsManager.remove(Minecraft.getInstance(), friend.username())));
 			labels.add(new Label("§b" + friend.username(), x + TEXT_X_OFFSET, y + (FACE_SIZE - 8) / 2));
 			y += ROW_HEIGHT;

@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Short message relay riding entirely on sky.melloo.me - a "/me chat" DM to a confirmed friend, or
+ * Short message relay riding entirely on sky.melloo.me - a "/mes chat" DM to a confirmed friend, or
  * a broadcast to whichever current party members are also running this mod - that never touches
  * real Hypixel chat at all. Moved here from SkyMelloo, alongside {@link FriendsManager}. Since the
  * relay server is self-operated, there's no need to detect a specific in-game command to trigger it
@@ -83,7 +83,7 @@ public final class RelayChatManager {
 			// Click a DM sender's name to pre-fill a reply, same convenience as clicking a real
 			// player's name in vanilla chat to /msg them.
 			name.setStyle(Style.EMPTY
-					.withClickEvent(new ClickEvent.SuggestCommand("/me chat " + message.fromUsername() + " "))
+					.withClickEvent(new ClickEvent.SuggestCommand("/mes chat " + message.fromUsername() + " "))
 					.withHoverEvent(new HoverEvent.ShowText(Lang.c("mellooessentials.tooltip.chat.reply"))));
 		}
 		client.player.sendSystemMessage(ChatUtil.prefixed(Component.literal(tag).append(name).append(Component.literal("§7: §f" + message.text()))));

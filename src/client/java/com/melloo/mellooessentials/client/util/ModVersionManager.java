@@ -17,7 +17,7 @@ import java.util.List;
 
 /**
  * Same version/integrity check as SkyMelloo's own ModVersionManager, ported over so
- * MellooEssentials-only installs (no SkyMelloo) get the same "/me version" and "/me legal"
+ * MellooEssentials-only installs (no SkyMelloo) get the same "/mes version" and "/mes legal"
  * commands and the same one-time unofficial-build notice - see SkyMelloo's ModVersionManager for
  * the full reasoning on why the jar hash is scoped to just this mod's own package.
  */
@@ -51,7 +51,7 @@ public final class ModVersionManager {
 		return lastResult;
 	}
 
-	/** Fires a fresh check right now, for "/me version" - see SkyMelloo's own checkNow for the full reasoning. */
+	/** Fires a fresh check right now, for "/mes version" - see SkyMelloo's own checkNow for the full reasoning. */
 	public static void checkNow(java.util.function.Consumer<ApiClient.VersionCheckResult> onResult, java.util.function.Consumer<Long> onCooldown) {
 		long now = System.currentTimeMillis();
 		long remaining = MANUAL_CHECK_COOLDOWN_MS - (now - lastManualCheckMillis);

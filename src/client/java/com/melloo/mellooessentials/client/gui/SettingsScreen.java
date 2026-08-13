@@ -280,16 +280,6 @@ public class SettingsScreen extends Screen {
 		rebuildRows();
 	}
 
-	/**
-	 * The vanilla default (see Screen#extractBackground) unconditionally applies a blur + dark menu
-	 * background behind ANY open screen, completely separate from whatever extractRenderState draws
-	 * itself - overriding this to do nothing is the only way to actually stop that, no amount of
-	 * changing our own panel's color/position touches it.
-	 */
-	@Override
-	public void extractBackground(GuiGraphicsExtractor gg, int mouseX, int mouseY, float partialTick) {
-	}
-
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor gg, int mouseX, int mouseY, float partialTick) {
 		int px = panelX();
