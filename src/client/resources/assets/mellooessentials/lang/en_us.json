@@ -190,8 +190,6 @@
 	"mellooessentials.gui.settings.cloud.info_sync": "Sync HUD positions and cosmetics to sky.melloo.me.",
 	"mellooessentials.gui.settings.cloud.info_requires_link": "Requires a linked account - see /mes link.",
 	"mellooessentials.gui.settings.cloud.sync_toggle": "Cloud Sync",
-	"mellooessentials.gui.settings.cloud.push_now": "Push Now",
-	"mellooessentials.gui.settings.cloud.pull_now": "Pull Now",
 	"mellooessentials.gui.settings.skymelloo_config": "SkyMelloo Config",
 
 	"mellooessentials.cosmetic.halo": "Halo",

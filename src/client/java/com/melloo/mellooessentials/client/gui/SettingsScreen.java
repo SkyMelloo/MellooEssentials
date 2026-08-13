@@ -199,8 +199,9 @@ public class SettingsScreen extends Screen {
 				rows.add(infoRow(Lang.s("mellooessentials.gui.settings.cloud.info_sync")));
 				rows.add(infoRow(Lang.s("mellooessentials.gui.settings.cloud.info_requires_link")));
 				rows.add(boolRow(Lang.s("mellooessentials.gui.settings.cloud.sync_toggle"), () -> c.cloudSyncEnabled, v -> c.cloudSyncEnabled = v));
-				rows.add(actionRow(Lang.s("mellooessentials.gui.settings.cloud.push_now"), () -> CloudSyncManager.push(Minecraft.getInstance())));
-				rows.add(actionRow(Lang.s("mellooessentials.gui.settings.cloud.pull_now"), () -> CloudSyncManager.forcePull(Minecraft.getInstance(), this::refreshAfterChildClosed)));
+				// Manual Push Now/Pull Now buttons removed - push already happens automatically on every
+				// settings close (see removed() below), and pull happens automatically on its own
+				// schedule elsewhere, so these were redundant actions cluttering the tab.
 			}
 		}
 		rebuildRows();
@@ -282,6 +283,11 @@ public class SettingsScreen extends Screen {
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor gg, int mouseX, int mouseY, float partialTick) {
+		// Thin full-screen tint, same value as SkyMelloo's own settings screen (PANEL_BG there) -
+		// the popup card below only covers the center, so without this the rest of the screen falls
+		// through to whatever the engine's own un-overridden background default is, which doesn't
+		// read as transparent/see-through the way this mod's other screens do.
+		gg.fill(0, 0, this.width, this.height, 0x30000000);
 		int px = panelX();
 		int py = panelY();
 		int pw = panelWidth();
