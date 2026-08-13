@@ -18,7 +18,7 @@ import java.util.UUID;
  * "Social" menu (key G) - the friends list (separate from real Hypixel friends, see
  * {@link FriendsManager}). Moved here from SkyMelloo along with the rest of the Friends system;
  * unlike the old SkyMelloo version this has no Party column - party membership/kick/block stay
- * SkyMelloo-only features (richer MP/floor data, auto-kick rules) with their own existing chat
+ * SkyMelloo-only features (richer AP/floor data, auto-kick rules) with their own existing chat
  * commands, not duplicated into this simpler standalone-friendly screen.
  * <p>
  * Every text label's (x, y) is computed exactly once, alongside its matching button, into
