@@ -277,10 +277,8 @@ public class MellooEssentialsClient implements ClientModInitializer {
 								return 1;
 							}))
 			);
-			// "me" collided with vanilla's own "/me <action>" roleplay command - a client-side
-			// command with the same name intercepts the input before it can ever reach the server,
-			// silently breaking vanilla's "/me" for everyone using this mod. "mes" doesn't collide
-			// with anything.
+			// "me" collided with vanilla's own "/me" roleplay command (a client-side command with the
+			// same name intercepts input before it reaches the server) - "mes" doesn't collide.
 			dispatcher.register(ClientCommands.literal("mes").redirect(mellooessentialsNode));
 		});
 	}

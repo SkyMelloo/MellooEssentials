@@ -23,10 +23,6 @@ import java.util.function.Supplier;
 /** The single presence report/query loop for both mods - see the extension-point setters below for how SkyMelloo contributes. */
 public final class PresenceManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger("MellooEssentials/PresenceManager");
-	// Was 40 (2s) - a real report found dungeon-replay position history had ~1s gaps between
-	// consecutive snapshots on the website, since DungeonSyncManager's 1-second send window assumed
-	// a 1-second report cadence that wasn't actually true. Real 1s cadence now; DungeonSyncManager's
-	// send window was widened to match (plus overlap padding) alongside this.
 	private static final int REPORT_INTERVAL_TICKS = 20; // 1s
 	private static final int QUERY_INTERVAL_TICKS = 100; // 5s
 
