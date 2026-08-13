@@ -33,6 +33,10 @@ public final class PresenceManager {
 	// Optional contributions from other mods, folded into this mod's own single report.
 	private static Supplier<String> statusTextSupplier = () -> "";
 	private static Supplier<JsonObject> dungeonSyncSupplier = () -> null;
+	// Separate from dungeonSyncSupplier - that one only returns non-null while actually in a
+	// dungeon, so the website has no way to tell "sync enabled but idle" from "genuinely disabled"
+	// (a real report - the Dungeon Sync setting itself is reported persistently instead).
+	private static java.util.function.BooleanSupplier dungeonSyncEnabledSupplier = () -> false;
 	private static Supplier<List<String>> extraCosmeticsSupplier = List::of;
 	private static DungeonSyncListener dungeonSyncListener = (uuid, username, payload) -> {
 	};
@@ -66,6 +70,11 @@ public final class PresenceManager {
 	/** SkyMelloo's opaque live-dungeon payload, forwarded as-is - called fresh on every report, return null when there's nothing to share. */
 	public static void setDungeonSyncSupplier(Supplier<JsonObject> supplier) {
 		dungeonSyncSupplier = supplier;
+	}
+
+	/** Whether the Dungeon Sync setting itself is on, independent of whether a run is active right now - see the field's own doc comment. */
+	public static void setDungeonSyncEnabledSupplier(java.util.function.BooleanSupplier supplier) {
+		dungeonSyncEnabledSupplier = supplier;
 	}
 
 	/** Extra cosmetic effect keys to fold into the combined outgoing list (e.g. SkyMelloo's "magicMissile") - not user-configurable cosmetics, those stay this mod's own {@link #collectEnabledCosmetics}. */
@@ -124,9 +133,10 @@ public final class PresenceManager {
 			location = HypixelLocationTracker.getMode();
 		}
 		String finalLocation = location;
+		boolean dungeonSyncEnabled = dungeonSyncEnabledSupplier.getAsBoolean();
 		ModAuthManager.getIdentity(client)
 				.exceptionally(error -> null)
-				.thenCompose(identity -> ApiClient.reportPresence(uuid, username, cosmetics, status, dungeonSync, afk, accountLinked, finalLocation, skyMellooInstalled, identity))
+				.thenCompose(identity -> ApiClient.reportPresence(uuid, username, cosmetics, status, dungeonSync, afk, accountLinked, finalLocation, skyMellooInstalled, dungeonSyncEnabled, identity))
 				.whenComplete((v, error) -> {
 					reportInFlight = false;
 					LOGGER.debug(error == null

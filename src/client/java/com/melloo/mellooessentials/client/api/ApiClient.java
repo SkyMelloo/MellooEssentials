@@ -193,7 +193,7 @@ public final class ApiClient {
 	 * server's only signal for the mod-user marker's pink-vs-light-blue choice (see PresenceEntry's
 	 * doc comment) - when SkyMelloo is installed and contributing to this report.
 	 */
-	public static CompletableFuture<Void> reportPresence(String uuid, String username, List<String> cosmetics, String status, JsonObject dungeonSync, boolean afk, boolean accountLinked, String location, boolean asSkyMelloo, ModAuthManager.ModIdentity identity) {
+	public static CompletableFuture<Void> reportPresence(String uuid, String username, List<String> cosmetics, String status, JsonObject dungeonSync, boolean afk, boolean accountLinked, String location, boolean asSkyMelloo, boolean dungeonSyncEnabled, ModAuthManager.ModIdentity identity) {
 		JsonObject body = new JsonObject();
 		body.addProperty("uuid", uuid);
 		body.addProperty("username", username);
@@ -211,6 +211,9 @@ public final class ApiClient {
 		if (location != null) {
 			body.addProperty("location", location);
 		}
+		// Persistent, independent of dungeonSync - that field is only ever non-null while actually in
+		// a dungeon, so the website has no other way to tell "sync on but idle" from "genuinely off".
+		body.addProperty("dungeonSyncEnabled", dungeonSyncEnabled);
 		String clientHeader = asSkyMelloo ? "X-SkyMelloo-Client" : "X-MellooEssentials-Client";
 		return postJson("/presence", body, identity, clientHeader).thenApply(root -> null);
 	}
