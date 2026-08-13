@@ -167,16 +167,18 @@ public final class ApiClient {
 
 	// ---- admin account verification ----
 
-	public record VerifyResult(boolean ok, String error) {
+	/** {@code linkedAccountName} is the website account's display name (Discord nickname/username) - null against an older server that doesn't send it yet. */
+	public record VerifyResult(boolean ok, String error, String linkedAccountName) {
 	}
 
-	/** Completes the admin account-linking flow: the admin generated {@code code} on sky.melloo.me/set, this proves (via the signed request) the in-game account owns it. Server-side is mod-agnostic - any mod's valid signature works, same as every other /mod/* route. */
+	/** Completes the account-linking flow: the website account generated {@code code} on sky.melloo.me/account, this proves (via the signed request) the in-game account owns it. Server-side is mod-agnostic - any mod's valid signature works, same as every other /mod/* route. */
 	public static CompletableFuture<VerifyResult> verifyAccount(String code, ModAuthManager.ModIdentity identity) {
 		JsonObject body = new JsonObject();
 		body.addProperty("code", code);
 		return postJson("/verify", body, identity)
-				.thenApply(root -> new VerifyResult(true, null))
-				.exceptionally(error -> new VerifyResult(false, com.melloo.mellooessentials.client.util.ChatUtil.friendlyError(error)));
+				.thenApply(root -> new VerifyResult(true, null,
+						root.has("linkedAccountName") && !root.get("linkedAccountName").isJsonNull() ? root.get("linkedAccountName").getAsString() : null))
+				.exceptionally(error -> new VerifyResult(false, com.melloo.mellooessentials.client.util.ChatUtil.friendlyError(error), null));
 	}
 
 	// ---- presence (cosmetics sync + role lookup) ----

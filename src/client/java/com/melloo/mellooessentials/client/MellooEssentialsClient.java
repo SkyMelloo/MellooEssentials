@@ -206,7 +206,9 @@ public class MellooEssentialsClient implements ClientModInitializer {
 															if (error != null) {
 																c.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.verify.connection_failed", ChatUtil.friendlyError(error))));
 															} else if (result.ok()) {
-																c.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.verify.linked")));
+															c.player.sendSystemMessage(ChatUtil.prefixed(result.linkedAccountName() != null
+																	? Lang.c("mellooessentials.chat.verify.linked_as", result.linkedAccountName())
+																	: Lang.c("mellooessentials.chat.verify.linked")));
 															} else {
 																c.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.verify.failed", result.error())));
 															}
