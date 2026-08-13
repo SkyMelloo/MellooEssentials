@@ -4,6 +4,10 @@ Internal dev version history - every entry below used to live as a giant stacked
 
 > Versioning scheme, same discipline and starting point as skymelloo (kept as a fully separate counter - this mod's mod_version has nothing to do with skymelloo's own numbers): mod_version below is the INTERNAL/dev version, bumped on every single change so every build has a unique, distinguishable identity - without this, "is the jar I installed actually the latest build" is impossible to answer just by looking at it, which is exactly the confusion that prompted adding this scheme. PATCH (3rd number) for small changes, MINOR (2nd number, patch reset to 0) for bigger features, MAJOR only on explicit instruction. public_version is a separate, hand-maintained user-facing release number, only bumped when a build is actually promoted to public via the sky.melloo.me admin panel.
 
+## 0.12.2 (from 0.12.1)
+
+README banner - no public release planned yet, still full active development, Discord contact for anyone interested in helping. No functional change.
+
 ## 0.12.1 (from 0.12.0)
 
 Moved the whole per-version changelog history out of gradle.properties (it had grown to 240+ lines) into this file. No functional change.

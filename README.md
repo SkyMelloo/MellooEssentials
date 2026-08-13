@@ -5,6 +5,10 @@
 [![Loader](https://img.shields.io/badge/loader-fabric-e5a00d.svg)](https://fabricmc.net/)
 [![Website](https://img.shields.io/badge/website-sky.melloo.me-informational.svg)](https://sky.melloo.me)
 
+> [!NOTE]
+> No public release is planned yet - this is still full active development, no ETA on a first
+> public version. Interested in helping out? Reach out on Discord: **hexedmaya**.
+
 A lightweight [Fabric](https://fabricmc.net/) client mod for Hypixel: party/team highlighting, a
 mod-native friends system, and cloud-synced settings - no sky.melloo.me account needed. Downloaded
 from [sky.melloo.me/download](https://sky.melloo.me/download).
