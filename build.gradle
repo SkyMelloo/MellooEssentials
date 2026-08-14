@@ -39,10 +39,8 @@ dependencies {
 	implementation "net.hypixel:mod-api:${project.hypixel_modapi_version}"
 }
 
-// Own build type/signing/registration pipeline, mirroring SkyMelloo's build.gradle exactly but
-// against MellooEssentials' own key/token/endpoint (~/.mellooessentials-signing/, /api/mod/mellooessentials/*)
-// - deliberately independent, not shared with skymelloo's pipeline. Declared before processResources
-// below since that block reads it directly.
+// Mirrors SkyMelloo's build.gradle, own key/token/endpoint (~/.mellooessentials-signing/,
+// /api/mod/mellooessentials/*) - independent, not shared with skymelloo's pipeline.
 def buildType = project.hasProperty('testBuild') ? 'test' : 'dev'
 
 processResources {
@@ -64,6 +62,17 @@ java {
 	withSourcesJar()
 	sourceCompatibility = JavaVersion.VERSION_25
 	targetCompatibility = JavaVersion.VERSION_25
+}
+
+// Embeds the LICENSE file in the built jar (as LICENSE_mellooessentials) - matches SkyMelloo,
+// required for AGPL compliance when the jar is conveyed on its own.
+jar {
+	def projectName = project.name
+	inputs.property "projectName", projectName
+
+	from("LICENSE") {
+		rename { "${it}_$projectName"}
+	}
 }
 
 def resolveChangelogText = {
