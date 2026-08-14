@@ -100,11 +100,11 @@ public final class EssentialsConfig {
 
 	// ---- Cloud Sync ----
 	// Same reasoning/architecture as SkyMelloo's own cloudSyncEnabled - see CloudSyncManager's doc
-	// comment. On by default so HUD positions (the original motivation for this - Lunar Client
-	// profiles each have their own separate config file, so a position set in one profile never
-	// showed up in another) and cosmetics carry over automatically for a linked account.
+	// comment. Off by default now, same privacy-first bar as presenceSharingEnabled above - a linked
+	// account is no longer enough on its own to start syncing HUD positions/cosmetics, this needs its
+	// own explicit opt-in too.
 
-	public boolean cloudSyncEnabled = true;
+	public boolean cloudSyncEnabled = false;
 
 	// ---- Sharing & Privacy ----
 	// Master switch for presence reporting itself - everything else this mod (or SkyMelloo, which

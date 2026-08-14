@@ -4,6 +4,10 @@ Internal dev version history - every entry below used to live as a giant stacked
 
 > Versioning scheme, same discipline and starting point as skymelloo (kept as a fully separate counter - this mod's mod_version has nothing to do with skymelloo's own numbers): mod_version below is the INTERNAL/dev version, bumped on every single change so every build has a unique, distinguishable identity - without this, "is the jar I installed actually the latest build" is impossible to answer just by looking at it, which is exactly the confusion that prompted adding this scheme. PATCH (3rd number) for small changes, MINOR (2nd number, patch reset to 0) for bigger features, MAJOR only on explicit instruction. public_version is a separate, hand-maintained user-facing release number, only bumped when a build is actually promoted to public via the sky.melloo.me admin panel.
 
+## 0.13.1 (from 0.13.0) · patch
+
+`cloudSyncEnabled` now defaults to off instead of on (T53). Previously, cross-device sync of HUD positions/cosmetics started automatically the moment an account was linked, with no separate explicit step - now it needs its own opt-in in Settings, same privacy-first bar `presenceSharingEnabled` already had. Existing users who already had it on keep their current setting - this only changes what a fresh install/config starts with.
+
 ## 0.13.0 (from 0.12.4) · minor
 
 ModVersionManager now checks SkyMelloo too (if installed), not just itself - Fabric Loader's mod-container registry is global, so this mod can read/hash SkyMelloo's own jar the same way it reads its own, no dependency-direction issue. Fixes a real annoyance: both mods used to run their own completely separate version/integrity check and each fire their own "unofficial build" notice back to back on join. SkyMelloo's own copy of this whole system is deleted - "/sm version"/"/sm legal" now read the new `getSkyMellooXxx()`/`checkSkyMellooNow()` getters here instead.
