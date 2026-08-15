@@ -10,7 +10,7 @@ body:
     id: version
     attributes:
       label: Mod version
-      description: "/mes version" in-game, or the jar filename
+      description: Shown by "/mes version" in-game, or check the jar filename
       placeholder: e.g. 0.12.3
     validations:
       required: true
