@@ -248,8 +248,12 @@ public final class PresenceManager {
 		return otherCosmetics.containsKey(uuid);
 	}
 
-	/** True only if this uuid has ALSO reported presence via SkyMelloo's own client recently, not just MellooEssentials' - see the mod-user marker's pink-vs-light-blue choice in EntityDisplayNameMixin/PlayerTabOverlayMixin. isModUser alone can't answer this: it's true for anyone running either mod, since both report to the same /presence endpoint. */
+	/** True only if this uuid has ALSO reported presence via SkyMelloo's own client recently, not just MellooEssentials' - see the mod-user marker's pink-vs-light-blue choice in EntityDisplayNameMixin/PlayerTabOverlayMixin. isModUser alone can't answer this: it's true for anyone running either mod, since both report to the same /presence endpoint. For the local player specifically, this is known locally and immediately (skyMellooInstalled, set at mod startup) - answered from that directly rather than waiting on the first presence-query round trip (up to QUERY_INTERVAL_TICKS after join), which otherwise left your own marker showing the light-blue default for several real seconds every time, mirroring the same local-player shortcut ModMarkerManager.isModUser already has. */
 	public static boolean isSkyMelloo(UUID uuid) {
+		var local = Minecraft.getInstance().player;
+		if (local != null && local.getUUID().equals(uuid)) {
+			return skyMellooInstalled;
+		}
 		return otherIsSkyMelloo.contains(uuid);
 	}
 
