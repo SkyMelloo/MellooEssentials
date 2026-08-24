@@ -6,7 +6,7 @@ Internal dev version history - every entry below used to live as a giant stacked
 
 ## 0.14.0 (from 0.13.3) · minor
 
-A build can now target a different deployment than production, matching SkyMelloo's own change. `site_url` in gradle.properties is the committed default and must stay `https://sky.melloo.me` - a build fails outright if it doesn't, since that file decides where everyone else's download points. Aim a build elsewhere with `-PsiteUrl=https://dev3-sky.melloo.me` or `siteUrl` in `~/.gradle/gradle.properties`, neither of which is in the repo.
+A build can now target a different deployment than production, matching SkyMelloo's own change. `site_url` in gradle.properties is the committed default and must stay `https://sky.melloo.me` - a build fails outright if it doesn't, since that file decides where everyone else's download points. Aim a build elsewhere with `-PsiteUrl=...` or `siteUrl` in `~/.gradle/gradle.properties`, neither of which is in the repo.
 
 The target is baked into fabric.mod.json as `mellooessentials:siteUrl` and read back through the new `SiteConfig`; the upload/report/sign scripts follow it via `SKYMELLOO_SITE_URL`, so a dev-targeted build registers on that server rather than production. The download link stays pointed at production always.
 
