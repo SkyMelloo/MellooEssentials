@@ -4,6 +4,12 @@ Internal dev version history - every entry below used to live as a giant stacked
 
 > Versioning scheme, same discipline and starting point as skymelloo (kept as a fully separate counter - this mod's mod_version has nothing to do with skymelloo's own numbers): mod_version below is the INTERNAL/dev version, bumped on every single change so every build has a unique, distinguishable identity - without this, "is the jar I installed actually the latest build" is impossible to answer just by looking at it, which is exactly the confusion that prompted adding this scheme. PATCH (3rd number) for small changes, MINOR (2nd number, patch reset to 0) for bigger features, MAJOR only on explicit instruction. public_version is a separate, hand-maintained user-facing release number, only bumped when a build is actually promoted to public via the sky.melloo.me admin panel.
 
+## 0.14.0 (from 0.13.3) · minor
+
+A build can now target a different deployment than production, matching SkyMelloo's own change. `site_url` in gradle.properties is the committed default and must stay `https://sky.melloo.me` - a build fails outright if it doesn't, since that file decides where everyone else's download points. Aim a build elsewhere with `-PsiteUrl=https://dev3-sky.melloo.me` or `siteUrl` in `~/.gradle/gradle.properties`, neither of which is in the repo.
+
+The target is baked into fabric.mod.json as `mellooessentials:siteUrl` and read back through the new `SiteConfig`; the upload/report/sign scripts follow it via `SKYMELLOO_SITE_URL`, so a dev-targeted build registers on that server rather than production. The download link stays pointed at production always.
+
 ## 0.13.3 (from 0.13.2) · patch
 
 Real bugfix - `PresenceManager.isSkyMelloo` now answers the local player's own UUID from `skyMellooInstalled` directly (known locally at mod startup) instead of always waiting on the first presence-query round trip. `ModMarkerManager.isModUser` already had this local-player shortcut; `isSkyMelloo` didn't, so your own nametag marker could show the light-blue (MellooEssentials-only) default for several real seconds after joining, before the first query response ever arrived - and on clients that don't keep re-evaluating the nametag component every frame (reported on Lunar Client), that first wrong snapshot never got replaced at all.

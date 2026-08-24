@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
  * staff highlighting.
  */
 public final class ApiClient {
-	private static final String BASE_URL = "https://sky.melloo.me/api/public/mod/v1";
+	private static final String BASE_URL = SiteConfig.url("/api/public/mod/v1");
 	private static final HttpClient HTTP = HttpClient.newBuilder()
 			.connectTimeout(Duration.ofSeconds(5))
 			.build();

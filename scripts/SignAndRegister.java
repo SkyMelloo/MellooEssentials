@@ -71,7 +71,7 @@ public class SignAndRegister {
             String body = "{\"version\":\"" + escapeJson(version) + "\",\"hash\":\"" + escapeJson(hash) + "\",\"signature\":\"" + escapeJson(signature) + "\",\"changelog\":\"" + escapeJson(changelog) + "\"}";
             HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("https://sky.melloo.me/api/mod/mellooessentials/releases"))
+                    .uri(URI.create(siteUrl() + "/api/mod/mellooessentials/releases"))
                     .header("Content-Type", "application/json")
                     .header("X-Build-Report-Token", token)
                     .POST(HttpRequest.BodyPublishers.ofString(body))
@@ -124,6 +124,15 @@ public class SignAndRegister {
         byte[] der = Base64.getDecoder().decode(base64);
         KeyFactory keyFactory = KeyFactory.getInstance("Ed25519");
         return keyFactory.generatePrivate(new PKCS8EncodedKeySpec(der));
+    }
+
+    /** Set by Gradle from the site_url property, so a build registers against whichever deployment it targets. */
+    private static String siteUrl() {
+        String value = System.getenv("SKYMELLOO_SITE_URL");
+        if (value == null || value.isBlank()) {
+            return "https://sky.melloo.me";
+        }
+        return value.replaceAll("/+$", "");
     }
 
     private static String escapeJson(String s) {

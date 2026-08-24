@@ -36,7 +36,7 @@ try {
 }
 
 const req = https.request(
-  `https://sky.melloo.me/api/mod/mellooessentials/releases/${encodeURIComponent(version)}/jar`,
+  `${(process.env.SKYMELLOO_SITE_URL || 'https://sky.melloo.me').replace(/\/+$/, '')}/api/mod/mellooessentials/releases/${encodeURIComponent(version)}/jar`,
   {
     method: 'POST',
     headers: {

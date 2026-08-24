@@ -41,7 +41,7 @@ const hash = crypto.createHash('sha256').update(jarBytes).digest('hex');
 const body = JSON.stringify({ version, hash, builtAt: Date.now() });
 
 const req = https.request(
-  'https://sky.melloo.me/api/mod/mellooessentials/build-report',
+  `${(process.env.SKYMELLOO_SITE_URL || 'https://sky.melloo.me').replace(/\/+$/, '')}/api/mod/mellooessentials/build-report`,
   {
     method: 'POST',
     headers: {

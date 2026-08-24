@@ -242,7 +242,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 											} else {
 												c.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.command.version.outdated")));
 											}
-											c.player.sendSystemMessage(legalLink(Lang.c("mellooessentials.command.version.get_from_official"), "https://sky.melloo.me/download"));
+											c.player.sendSystemMessage(legalLink(Lang.c("mellooessentials.command.version.get_from_official"), com.melloo.mellooessentials.client.api.SiteConfig.PRODUCTION + "/download"));
 										},
 										cooldownSeconds -> {
 											Minecraft c = Minecraft.getInstance();
@@ -250,7 +250,7 @@ public class MellooEssentialsClient implements ClientModInitializer {
 												return;
 											}
 											c.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.command.version.cooldown", cooldownSeconds)));
-											c.player.sendSystemMessage(legalLink(Lang.c("mellooessentials.command.version.get_from_official"), "https://sky.melloo.me/download"));
+											c.player.sendSystemMessage(legalLink(Lang.c("mellooessentials.command.version.get_from_official"), com.melloo.mellooessentials.client.api.SiteConfig.PRODUCTION + "/download"));
 										}
 								);
 								return 1;
