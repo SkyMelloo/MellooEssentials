@@ -40,8 +40,11 @@ try {
 const hash = crypto.createHash('sha256').update(jarBytes).digest('hex');
 const body = JSON.stringify({ version, hash, builtAt: Date.now() });
 
+// Set by Gradle from the site_url property, so a build reports to whichever deployment it targets.
+const SITE_URL = (process.env.SKYMELLOO_SITE_URL || 'https://sky.melloo.me').replace(/\/+$/, '');
+
 const req = https.request(
-  `${(process.env.SKYMELLOO_SITE_URL || 'https://sky.melloo.me').replace(/\/+$/, '')}/api/mod/mellooessentials/build-report`,
+  `${SITE_URL}/api/mod/mellooessentials/build-report`,
   {
     method: 'POST',
     headers: {
@@ -57,7 +60,7 @@ const req = https.request(
     });
     res.on('end', () => {
       if (res.statusCode === 200) {
-        console.log(`[report-build] Reported build ${version} (${hash}) to sky.melloo.me.`);
+        console.log(`[report-build] Reported build ${version} (${hash}) to ${SITE_URL}.`);
       } else {
         console.warn(`[report-build] Server rejected the report (${res.statusCode}): ${data}`);
       }
