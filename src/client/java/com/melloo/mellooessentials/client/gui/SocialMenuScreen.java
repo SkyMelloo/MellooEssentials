@@ -14,20 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * "Social" menu (key G) - the friends list (separate from real Hypixel friends, see
- * {@link FriendsManager}). Moved here from SkyMelloo along with the rest of the Friends system;
- * unlike the old SkyMelloo version this has no Party column - party membership/kick/block stay
- * SkyMelloo-only features (richer AP/floor data, auto-kick rules) with their own existing chat
- * commands, not duplicated into this simpler standalone-friendly screen.
- * <p>
- * Every text label's (x, y) is computed exactly once, alongside its matching button, into
- * {@link #labels} during {@link #rebuild()} - {@link #extractRenderState} then just draws from that
- * list rather than recomputing the same layout a second time. Face icons ({@link #faces}) are the
- * same idea, keyed by UUID and resolved lazily via {@link RemoteFaceTextureCache} - which works
- * over HTTP regardless of whether that player is anywhere nearby, since a friend here can be
- * offline or on a completely different part of the network.
- */
+// "Social" menu (key G): the friends list, separate from real Hypixel friends. Label/face
+// positions are computed once into labels/faces during rebuild(), not recomputed every render.
 public class SocialMenuScreen extends Screen {
 	private record Label(String text, int x, int y) {
 	}
@@ -63,9 +51,7 @@ public class SocialMenuScreen extends Screen {
 	@Override
 	public void tick() {
 		super.tick();
-		// Friend requests can arrive while this screen is sitting open - re-checking every tick
-		// against a cheap hash is simpler than wiring a proper change-listener into FriendsManager's
-		// own independently-polling state.
+		// Cheap hash check each tick, simpler than wiring a change-listener into FriendsManager's state.
 		int friendsHash = FriendsManager.getFriends().hashCode();
 		int requestsHash = FriendsManager.getIncomingRequests().hashCode();
 		if (friendsHash != lastFriendsHash || requestsHash != lastRequestsHash) {
@@ -73,7 +59,7 @@ public class SocialMenuScreen extends Screen {
 		}
 	}
 
-	/** Lenient parse of a Mojang UUID string in either dashed or dashless form - null (no face icon) rather than throwing if it's ever something unexpected. */
+	// Lenient parse of a dashed or dashless UUID string; null rather than throwing on anything unexpected.
 	private static UUID parseUuid(String raw) {
 		if (raw == null || raw.isEmpty()) {
 			return null;

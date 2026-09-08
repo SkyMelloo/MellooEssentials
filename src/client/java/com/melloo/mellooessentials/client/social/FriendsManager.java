@@ -18,24 +18,10 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * A friends list entirely separate from Hypixel's real one - lets a player keep a private list of
- * other MellooEssentials/SkyMelloo users to DM (see {@link RelayChatManager}) without it needing to
- * be a real Hypixel friendship, or being visible to anyone not running the mod too. Moved here from
- * SkyMelloo - despite the branding history, this only ever authenticates via the anonymous
- * per-launch {@link ModAuthManager} identity both mods share, never the sky.melloo.me
- * Discord/website account link, so it works identically here.
- * <p>
- * Requests need mutual accept: sending one to someone who already sent you one completes it
- * immediately instead of leaving two one-way requests sitting around (see the server's own
- * lib/friends.js doc comment).
- * <p>
- * State (the friend list + incoming requests) is refreshed periodically and after every action -
- * there's no push notification for "someone added you", so a new incoming request only shows up
- * the next time this polls (see {@link #REFRESH_INTERVAL_TICKS}).
- */
+// A friends list entirely separate from Hypixel's real one, for DMing other mod users. Requests
+// need mutual accept: sending one to someone who already sent you one completes it immediately.
 public final class FriendsManager {
-	private static final int REFRESH_INTERVAL_TICKS = 600; // 30s - a friend request isn't urgent enough to poll any faster than this on its own (RelayChatManager's inbox poll is the fast path for actual messages)
+	private static final int REFRESH_INTERVAL_TICKS = 600; // 30s - RelayChatManager's inbox poll is the fast path for actual messages
 	private static final Logger LOGGER = LoggerFactory.getLogger("MellooEssentials/FriendsManager");
 
 	private static volatile List<ApiClient.FriendEntry> friends = List.of();
@@ -184,7 +170,7 @@ public final class FriendsManager {
 		}
 	}
 
-	/** Package-visible (not private) - {@link RelayChatManager}'s "chat &lt;name&gt;" argument also suggests off this, since sendDirect only ever accepts a confirmed friend anyway. */
+	// Package-visible: RelayChatManager's "chat <name>" argument also suggests off this.
 	static java.util.concurrent.CompletableFuture<com.mojang.brigadier.suggestion.Suggestions> suggestFriends(
 			com.mojang.brigadier.context.CommandContext<FabricClientCommandSource> ctx,
 			com.mojang.brigadier.suggestion.SuggestionsBuilder builder) {
