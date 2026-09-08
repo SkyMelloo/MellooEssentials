@@ -15,8 +15,7 @@ import java.util.function.BiFunction;
 import java.util.function.IntSupplier;
 
 // Lightweight HUD layout editor (opened via J) - drag on-screen HUD elements to reposition them.
-// Draws a placeholder box per element instead of the real HudElement, so a hidden one can still be
-// repositioned. Natively handles this mod's own two elements; SkyMelloo registers extras via setExtraElementsProvider.
+// Draws a placeholder box per element (so a hidden one can still be positioned), not the real HudElement.
 public class HudLayoutEditorScreen extends Screen {
 	// A single draggable HUD-position box - public so an extra-elements provider outside this class can build its own.
 	public static final class Draggable {
