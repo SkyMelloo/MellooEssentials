@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/** Purely cosmetic, client-side particle effects; also renders them on nearby opted-in players via {@link PresenceManager}. */
+// Purely cosmetic, client-side particle effects; also renders them on nearby opted-in players via PresenceManager.
 public final class CosmeticsRenderer {
 	private CosmeticsRenderer() {
 	}
@@ -174,24 +174,24 @@ public final class CosmeticsRenderer {
 		return color.getRGB() & 0xFFFFFF;
 	}
 
-	/** A "color" cosmetic's dust particle, or a fixed {@link ParticleKind} override if one is set - mutually exclusive. */
+	// A "color" cosmetic's dust particle, or a fixed ParticleKind override if one is set - mutually exclusive.
 	private static net.minecraft.core.particles.ParticleOptions colorOrParticle(String particleKindName, int rgb, float size) {
 		ParticleKind override = ParticleKind.byNameOr(particleKindName, null);
 		return override != null ? override.options : new DustParticleOptions(rgb, size);
 	}
 
-	/** Same idea as {@link #colorOrParticle}, for cosmetics whose "default" look is a fixed vanilla particle (or mix of them) rather than colored dust - null keeps {@code defaultOptions}, non-null replaces it with the chosen kind. */
+	// Same idea as colorOrParticle, but the "default" look is a fixed vanilla particle rather than colored dust.
 	private static net.minecraft.core.particles.ParticleOptions particleOrDefault(String particleKindName, net.minecraft.core.particles.ParticleOptions defaultOptions) {
 		ParticleKind override = ParticleKind.byNameOr(particleKindName, null);
 		return override != null ? override.options : defaultOptions;
 	}
 
-	/** Stable per-player animation offset derived from UUID, so players don't sync up by coincidence. */
+	// Stable per-player animation offset derived from UUID, so players don't sync up by coincidence.
 	private static long tickOffset(AbstractClientPlayer player) {
 		return player.getUUID().hashCode() & 0xFFFF;
 	}
 
-	/** Drift-free per-player rotation phase from world time + {@link #tickOffset}. {@code speed} is in radians/tick. */
+	// Drift-free per-player rotation phase from world time + tickOffset. speed is in radians/tick.
 	private static float phase(Minecraft client, AbstractClientPlayer player, float speed) {
 		long gameTime = client.level.getGameTime() + tickOffset(player);
 		double raw = (gameTime * (double) speed) % (Math.PI * 2);
@@ -359,12 +359,12 @@ public final class CosmeticsRenderer {
 		glowyDust(client, rgb, x, y, z, 1.0F, EssentialsConfig.get().haloGlow, kindOverride);
 	}
 
-	/** Colored dust, or vanilla's {@link ParticleTypes#GLOW} if {@code glowing} - GLOW ignores the chosen color, it isn't colorable. */
+	// Colored dust, or vanilla's GLOW if glowing - GLOW ignores the chosen color, it isn't colorable.
 	private static void glowyDust(Minecraft client, int rgb, double x, double y, double z, float size, boolean glowing) {
 		glowyDust(client, rgb, x, y, z, size, glowing, null);
 	}
 
-	/** Same as the 6-arg overload, but {@code kindOverride} (if set) wins over both color and glow. */
+	// Same as the 6-arg overload, but kindOverride (if set) wins over both color and glow.
 	private static void glowyDust(Minecraft client, int rgb, double x, double y, double z, float size, boolean glowing, ParticleKind kindOverride) {
 		if (kindOverride != null) {
 			client.level.addParticle(kindOverride.options, x, y, z, 0, 0, 0);
@@ -392,7 +392,7 @@ public final class CosmeticsRenderer {
 
 	private static final int HELIX_STRANDS = 2;
 
-	/** Colored particle strands spiraling around your whole body like a DNA helix. */
+	// Colored particle strands spiraling around your whole body like a DNA helix.
 	private static void renderRainbowHelix(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float helixAngle = phase(client, player, 0.12F);
 
@@ -412,7 +412,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** A slow, wide double ring of particles orbiting around your body at chest height. */
+	// A slow, wide double ring of particles orbiting around your body at chest height.
 	private static void renderAura(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float auraAngle = phase(client, player, 0.1F);
 
@@ -447,7 +447,7 @@ public final class CosmeticsRenderer {
 	private static final int WAVE_DURATION_TICKS = 22;
 	private static final float WAVE_MAX_RADIUS = 2.6F;
 
-	/** Shockwave rings expand from a fixed spawn point, not the player's current position, so they don't drag while moving. */
+	// Shockwave rings expand from a fixed spawn point, not the player's current position, so they don't drag while moving.
 	private static void renderWave(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		UUID uuid = player.getUUID();
 		int timer = waveSpawnTimers.getOrDefault(uuid, 0) + 1;
@@ -475,7 +475,7 @@ public final class CosmeticsRenderer {
 		});
 	}
 
-	/** A volumetric cloud hovering above the player's head, raining from inside its own footprint. */
+	// A volumetric cloud hovering above the player's head, raining from inside its own footprint.
 	private static void renderRainCloud(Minecraft client, AbstractClientPlayer player, String particleKindName) {
 		RandomSource random = player.getRandom();
 		double cloudY = player.getY() + player.getBbHeight() + 1.3;
@@ -504,7 +504,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** A rotating ring of flame particles at your feet. */
+	// A rotating ring of flame particles at your feet.
 	private static void renderFireRing(Minecraft client, AbstractClientPlayer player) {
 		float fireRingAngle = phase(client, player, 0.25F);
 
@@ -519,7 +519,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** Sparkling particles drifting slowly down from above your head. */
+	// Sparkling particles drifting slowly down from above your head.
 	private static void renderStarRain(Minecraft client, AbstractClientPlayer player) {
 		RandomSource random = player.getRandom();
 		if (random.nextFloat() > 0.5F) {
@@ -532,7 +532,7 @@ public final class CosmeticsRenderer {
 		client.level.addParticle(kind.options, x, y, z, 0, -0.03, 0);
 	}
 
-	/** Occasional electric sparks crackling randomly around your body. */
+	// Occasional electric sparks crackling randomly around your body.
 	private static void renderSparkAura(Minecraft client, AbstractClientPlayer player) {
 		RandomSource random = player.getRandom();
 		if (random.nextFloat() > 0.4F) {
@@ -545,7 +545,7 @@ public final class CosmeticsRenderer {
 		client.level.addParticle(kind.options, x, y, z, 0, 0, 0);
 	}
 
-	/** A 3D Lissajous curve - three sine waves on different axes weave a constantly-shifting knot. */
+	// A 3D Lissajous curve - three sine waves on different axes weave a constantly-shifting knot.
 	private static void renderLissajous(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float lissajousT = phase(client, player, 0.05F);
 
@@ -567,7 +567,7 @@ public final class CosmeticsRenderer {
 
 	private static final double ROSE_K_PERIOD_TICKS = 5.0 / 0.003; // matches the old "roseK += 0.003F, wraps 2..7" ramp
 
-	/** A rose/rhodonea curve (r = radius * cos(k * theta)), petal count (k) slowly morphing while it spins. */
+	// A rose/rhodonea curve (r = radius * cos(k * theta)), petal count (k) slowly morphing while it spins.
 	private static void renderRoseCurve(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float roseAngle = phase(client, player, 0.04F);
 		long gameTime = client.level.getGameTime() + tickOffset(player);
@@ -602,7 +602,7 @@ public final class CosmeticsRenderer {
 	private static final int LANDING_SHOCKWAVE_DURATION_TICKS = 14;
 	private static final float LANDING_SHOCKWAVE_MAX_RADIUS = 3.5F;
 
-	/** One-shot expanding ring triggered the instant a player lands from a jump/fall - anchored to the landing spot, not their current position. Tracked per-player so it works for multiple people at once. */
+	// One-shot expanding ring on landing, anchored to the landing spot rather than the current position.
 	private static void tickLandingShockwave(Minecraft client, AbstractClientPlayer player, boolean enabled, int rgb, String particleKindName) {
 		UUID uuid = player.getUUID();
 		boolean onGround = player.onGround();
@@ -633,7 +633,7 @@ public final class CosmeticsRenderer {
 		landingShockwaveAge.put(uuid, age > LANDING_SHOCKWAVE_DURATION_TICKS ? -1 : age);
 	}
 
-	/** Occasional sparkle bursts overhead, like distant celebratory fireworks. */
+	// Occasional sparkle bursts overhead, like distant celebratory fireworks.
 	private static void renderFireworkBurst(Minecraft client, AbstractClientPlayer player) {
 		RandomSource random = player.getRandom();
 		if (random.nextFloat() > 0.03F) {
@@ -654,7 +654,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** Colored particles swirling tight and close around your body, like a personal cold aura. */
+	// Colored particles swirling tight and close around your body, like a personal cold aura.
 	private static void renderFrostAura(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float frostAngle = phase(client, player, 0.22F);
 		double radius = 0.5;
@@ -668,7 +668,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** Musical notes floating up above your head occasionally. */
+	// Musical notes floating up above your head occasionally.
 	private static void renderNoteMelody(Minecraft client, AbstractClientPlayer player) {
 		RandomSource random = player.getRandom();
 		if (random.nextFloat() > 0.08F) {
@@ -681,7 +681,7 @@ public final class CosmeticsRenderer {
 		client.level.addParticle(kind.options, x, y, z, 0, 0, 0);
 	}
 
-	/** A fast-spinning double vortex of colored particles around your whole body. */
+	// A fast-spinning double vortex of colored particles around your whole body.
 	private static void renderPortalVortex(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float portalAngle = phase(client, player, 0.5F);
 		double radius = 0.8;
@@ -695,7 +695,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** Floating hearts drifting up occasionally - a playful, wholesome cosmetic. */
+	// Floating hearts drifting up occasionally - a playful, wholesome cosmetic.
 	private static void renderHeartTrail(Minecraft client, AbstractClientPlayer player) {
 		RandomSource random = player.getRandom();
 		if (random.nextFloat() > 0.06F) {
@@ -711,7 +711,7 @@ public final class CosmeticsRenderer {
 	private static final int GALAXY_ARMS = 3;
 	private static final int GALAXY_POINTS_PER_ARM = 10;
 
-	/** Multi-arm spiral, radius growing linearly from feet to head - angle must stay bounded, an unwrapped angle loses float precision over time. */
+	// Multi-arm spiral, radius growing linearly from feet to head - angle must stay bounded, an unwrapped angle loses float precision over time.
 	private static void renderSpiralGalaxy(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float galaxyRot = phase(client, player, 0.12F);
 
@@ -733,14 +733,14 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** While airborne (jumping/falling), leaves a particle trail along the player's actual arc. */
+	// While airborne (jumping/falling), leaves a particle trail along the player's actual arc.
 	private static void renderJumpTrail(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		if (!player.onGround()) {
 			client.level.addParticle(colorOrParticle(particleKindName, rgb, 1.0F), player.getX(), player.getY() + 0.1, player.getZ(), 0, 0, 0);
 		}
 	}
 
-	/** Occasional Totem-of-Undying-style flash burst above your head. */
+	// Occasional Totem-of-Undying-style flash burst above your head.
 	private static void renderTotemFlash(Minecraft client, AbstractClientPlayer player) {
 		RandomSource random = player.getRandom();
 		if (random.nextFloat() > 0.02F) {
@@ -758,7 +758,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** A dark, spooky pulsing ring of sculk particles at your feet. */
+	// A dark, spooky pulsing ring of sculk particles at your feet.
 	private static void renderSculkPulse(Minecraft client, AbstractClientPlayer player) {
 		float sculkAngle = phase(client, player, 0.15F);
 		double radius = 0.7 + Math.sin(sculkAngle) * 0.2;
@@ -772,7 +772,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** An ominous swirling aura, like the Raid/Trial Omen status effects. */
+	// An ominous swirling aura, like the Raid/Trial Omen status effects.
 	private static void renderOmenAura(Minecraft client, AbstractClientPlayer player) {
 		RandomSource random = player.getRandom();
 		if (random.nextFloat() > 0.3F) {
@@ -785,7 +785,7 @@ public final class CosmeticsRenderer {
 		client.level.addParticle(kind.options, x, y, z, 0, 0.02, 0);
 	}
 
-	/** Colored wind gusts swirling around your body, like you're standing in your own personal breeze. */
+	// Colored wind gusts swirling around your body, like you're standing in your own personal breeze.
 	private static void renderGustAura(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float gustAngle = phase(client, player, 0.35F);
 		double radius = 1.0;
@@ -798,7 +798,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** Colored fine particles gently falling around you, like ash near a volcano. */
+	// Colored fine particles gently falling around you, like ash near a volcano.
 	private static void renderAshFall(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		RandomSource random = player.getRandom();
 		if (random.nextFloat() > 0.4F) {
@@ -810,7 +810,7 @@ public final class CosmeticsRenderer {
 		client.level.addParticle(colorOrParticle(particleKindName, rgb, 0.9F), x, y, z, 0, -0.03, 0);
 	}
 
-	/** Cozy smoke wisps trailing gently from your feet. */
+	// Cozy smoke wisps trailing gently from your feet.
 	private static void renderCampfireSmoke(Minecraft client, AbstractClientPlayer player, String particleKindName) {
 		RandomSource random = player.getRandom();
 		if (random.nextFloat() > 0.2F) {
@@ -823,7 +823,7 @@ public final class CosmeticsRenderer {
 		client.level.addParticle(particleOrDefault(particleKindName, defaultType), x, y, z, 0, 0.03, 0);
 	}
 
-	/** Enchanted-hit sparkles bursting around you occasionally, like a magic critical hit. */
+	// Enchanted-hit sparkles bursting around you occasionally, like a magic critical hit.
 	private static void renderEnchantedCritSparkle(Minecraft client, AbstractClientPlayer player) {
 		RandomSource random = player.getRandom();
 		if (random.nextFloat() > 0.12F) {
@@ -836,7 +836,7 @@ public final class CosmeticsRenderer {
 		client.level.addParticle(kind.options, x, y, z, 0, 0, 0);
 	}
 
-	/** A trailing plume of dust drifting up behind you, like sneaking through smoke. */
+	// A trailing plume of dust drifting up behind you, like sneaking through smoke.
 	private static void renderDustPlumeTrail(Minecraft client, AbstractClientPlayer player) {
 		RandomSource random = player.getRandom();
 		if (random.nextFloat() > 0.15F) {
@@ -849,7 +849,7 @@ public final class CosmeticsRenderer {
 		client.level.addParticle(kind.options, x, y, z, 0, 0.03, 0);
 	}
 
-	/** A widening funnel of particles from your feet up to above your head, like a personal tornado. */
+	// A widening funnel of particles from your feet up to above your head, like a personal tornado.
 	private static void renderTornado(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float tornadoAngle = phase(client, player, 0.4F);
 		float bodyHeight = player.getBbHeight();
@@ -867,7 +867,7 @@ public final class CosmeticsRenderer {
 
 	private static final int BLACK_HOLE_RINGS = 4;
 
-	/** A black particle sphere at the center, with colored rings orbiting it - inner rings spin faster, like an accretion disk. */
+	// A black particle sphere at the center, with colored rings orbiting it - inner rings spin faster, like an accretion disk.
 	private static void renderBlackHole(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float bodyMid = player.getBbHeight() * 0.5F;
 		double centerY = player.getY() + bodyMid;
@@ -904,7 +904,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** Two tight, contra-rotating spirals weaving around your whole body. */
+	// Two tight, contra-rotating spirals weaving around your whole body.
 	private static void renderTwinVortex(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float twinVortexAngle = phase(client, player, 0.45F);
 		float bodyHeight = player.getBbHeight();
@@ -930,7 +930,7 @@ public final class CosmeticsRenderer {
 	private static final int CHARGE_SETTLE_TICKS = 24;
 	private static final int CHARGE_CYCLE_TICKS = CHARGE_PULL_TICKS + CHARGE_BURST_TICKS + CHARGE_SETTLE_TICKS;
 
-	/** A ring of particles that pulls in tight to your chest, bursts back out, wobbles briefly, then repeats - like charging up energy. */
+	// A ring of particles that pulls in tight to your chest, bursts back out, wobbles briefly, then repeats - like charging up energy.
 	private static void renderChargeUp(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float chargeUpAngle = phase(client, player, 0.2F);
 		int cycleTick = chargeUpCycleTicks.getOrDefault(player.getUUID(), 0);
@@ -980,7 +980,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** Two tilted, counter-rotating rings of particles around your waist, like Saturn's rings seen from an angle. */
+	// Two tilted, counter-rotating rings of particles around your waist, like Saturn's rings seen from an angle.
 	private static void renderOrbitRings(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float orbitRingsAngle = phase(client, player, 0.08F);
 		float ringHeight = player.getBbHeight() * 0.45F;
@@ -999,7 +999,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** A lightning strike from well above down to the feet, densely segmented with occasional branching forks. */
+	// A lightning strike from well above down to the feet, densely segmented with occasional branching forks.
 	private static void renderLightningAura(Minecraft client, AbstractClientPlayer player, String particleKindName) {
 		RandomSource random = player.getRandom();
 		if (random.nextFloat() > 0.05F) {
@@ -1049,7 +1049,7 @@ public final class CosmeticsRenderer {
 
 	private static final int[] CONFETTI_COLORS = {0xFFFF5555, 0xFF55FF55, 0xFF5599FF, 0xFFFFFF55, 0xFFFF55FF, 0xFF55FFFF};
 
-	/** Occasional multi-colored confetti burst at a random spot around you - always rainbow-ish by default, no single accent color, unless overridden to a named particle kind instead. */
+	// Occasional multi-colored confetti burst - rainbow-ish by default unless overridden to a named particle kind.
 	private static void renderConfettiBurst(Minecraft client, AbstractClientPlayer player, String particleKindName) {
 		RandomSource random = player.getRandom();
 		if (random.nextFloat() > 0.08F) {
@@ -1073,7 +1073,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** Broad rounded wing planform with a traveling-wave flap - span points lag behind the root for a whip shape. */
+	// Broad rounded wing planform with a traveling-wave flap - span points lag behind the root for a whip shape.
 	private static void renderMothWings(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float mothWingFlap = phase(client, player, 0.15F);
 		float bodyMid = player.getBbHeight() * 0.78F;
@@ -1125,7 +1125,7 @@ public final class CosmeticsRenderer {
 		client.level.addParticle(colorOrParticle(particleKindName, rgb, size), x, y, z, 0, 0, 0);
 	}
 
-	/** Pointed swept-back wings: a chord-swept membrane (sharper taper than {@link #renderMothWings}), straight feather-tip spikes, and a random ember flicker off the tip. */
+	// Pointed swept-back wings: a chord-swept membrane (sharper taper than renderMothWings), straight feather-tip spikes, and a random ember flicker off the tip.
 	private static void renderPhoenixWings(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float flap = phase(client, player, 0.15F);
 		float bodyMid = player.getBbHeight() * 0.8F;
@@ -1212,7 +1212,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** A jagged, slowly writhing zigzag crack off the player's back, pulling nearby particles in with occasional smoke puffs escaping out. */
+	// A jagged, slowly writhing zigzag crack off the player's back, pulling nearby particles in with occasional smoke puffs escaping out.
 	private static void renderVoidRift(Minecraft client, AbstractClientPlayer player) {
 		float voidRiftPhase = phase(client, player, 0.06F);
 		RandomSource random = player.getRandom();
@@ -1278,7 +1278,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** A 3-strand braid of sparkles from feet to head - strands orbit 120° apart, crossing over/under as they rise. */
+	// A 3-strand braid of sparkles from feet to head - strands orbit 120° apart, crossing over/under as they rise.
 	private static void renderStarWeave(Minecraft client, AbstractClientPlayer player, String particleKindName) {
 		float starWeaveAngle = phase(client, player, 0.1F);
 		var kind = ParticleKind.byNameOr(particleKindName, ParticleKind.SPARKLE).options;
@@ -1302,7 +1302,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** A steady stream of sparkles spawned at your feet with upward velocity - vanilla's own particle drift carries them all the way up past your head on their own. */
+	// A steady stream of sparkles spawned at the feet - vanilla's own particle drift carries them up past the head.
 	private static void renderAscendingSparkles(Minecraft client, AbstractClientPlayer player, String particleKindName) {
 		RandomSource random = player.getRandom();
 		if (random.nextFloat() > 0.5F) {
@@ -1316,7 +1316,7 @@ public final class CosmeticsRenderer {
 		client.level.addParticle(kind, x, player.getY(), z, 0, 0.06, 0);
 	}
 
-	/** A stretched-out tail of sparkles streaming behind you - only while actually moving, tied to real movement direction/speed rather than always-on. */
+	// A stretched-out tail of sparkles streaming behind you - only while actually moving, tied to real movement direction/speed rather than always-on.
 	private static void renderCometTrail(Minecraft client, AbstractClientPlayer player, String particleKindName) {
 		Vec3 velocity = player.getDeltaMovement();
 		double speed = velocity.horizontalDistance();
@@ -1336,7 +1336,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** A soft, slow-drifting cloud of sparkles at varying radii/heights around you, unlike Aura's tight fixed-radius orbit - reads as a gentle veil rather than a ring. */
+	// A slow-drifting sparkle cloud at varying radii/heights, unlike Aura's tight fixed-radius orbit.
 	private static void renderStarVeil(Minecraft client, AbstractClientPlayer player, String particleKindName) {
 		float starVeilAngle = phase(client, player, 0.03F);
 		RandomSource random = player.getRandom();
@@ -1354,7 +1354,7 @@ public final class CosmeticsRenderer {
 
 	private static final int RADIANT_PULSE_PERIOD_TICKS = 30;
 
-	/** A ring of sparkles that pulses outward from your chest every ~1.5 seconds. */
+	// A ring of sparkles that pulses outward from your chest every ~1.5 seconds.
 	private static void renderRadiantPulse(Minecraft client, AbstractClientPlayer player, String particleKindName) {
 		if ((client.level.getGameTime() + tickOffset(player)) % RADIANT_PULSE_PERIOD_TICKS != 0) {
 			return;
@@ -1370,7 +1370,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** A pulsing sphere of particles centered on the body, dense latitude rings, radius breathing like a heartbeat. */
+	// A pulsing sphere of particles centered on the body, dense latitude rings, radius breathing like a heartbeat.
 	private static void renderPulsingSphere(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float raw = phase(client, player, 0.08F);
 		float pulse = (1F - (float) Math.cos(raw)) * 0.5F; // smooth 0..1..0
@@ -1393,7 +1393,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** A ring of particles sweeping up and down the body on a smooth cycle, like a sci-fi scanner. */
+	// A ring of particles sweeping up and down the body on a smooth cycle, like a sci-fi scanner.
 	private static void renderScanner(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float raw = phase(client, player, 0.06F);
 		float sweep = (1F - (float) Math.cos(raw)) * 0.5F; // smooth 0..1..0
@@ -1409,7 +1409,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** A real Verlet cloth simulation (see {@link CapeSimulator}), unlike every other fixed-procedural cosmetic here. */
+	// A real Verlet cloth simulation (see CapeSimulator), unlike every other fixed-procedural cosmetic here.
 	private static void renderPhysicsCape(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		Vec3[][] nodes = CapeSimulator.tick(client, player);
 		var particle = colorOrParticle(particleKindName, rgb, 1.1F);
@@ -1431,7 +1431,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/** A fixed trapezoid cape silhouette, unlike {@link #renderPhysicsCape}'s real simulation - layers two sine waves so the billow doesn't read as one mechanical ripple. */
+	// A fixed trapezoid cape silhouette, unlike renderPhysicsCape's real simulation - layers two sine waves so the billow doesn't read as one mechanical ripple.
 	private static void renderCloak(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float wave1 = phase(client, player, 0.11F);
 		float wave2 = phase(client, player, 0.19F);

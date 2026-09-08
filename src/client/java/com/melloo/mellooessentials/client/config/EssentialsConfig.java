@@ -13,11 +13,8 @@ import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/**
- * Plain Gson-persisted settings (no account, no cloud sync, no YACL) - saved to
- * {@code config/mellooessentials.json}. {@link Color} is stored as a plain ARGB int via a custom
- * adapter, since Gson can't serialize java.awt.Color's own fields sensibly by default.
- */
+// Plain Gson-persisted settings, saved to config/mellooessentials.json.
+// Color is stored as a plain ARGB int via a custom adapter, since Gson can't serialize it directly.
 public final class EssentialsConfig {
 	private static final Path FILE = FabricLoader.getInstance().getConfigDir().resolve("mellooessentials.json");
 	private static final Gson GSON = new GsonBuilder()
@@ -63,17 +60,11 @@ public final class EssentialsConfig {
 		return new EssentialsConfig();
 	}
 
-	// Party/staff highlighting and presence sync are always on - not user-togglable at all (see
-	// HighlightManager/PresenceManager, which no longer gate on a config flag for these). Party is
-	// always light blue, sky.melloo.me team members (any role - contributor/admin/moderator/etc) are
-	// always pink and take priority over party when someone's both, so the meaning of a color never
-	// depends on some other player's personal settings.
+	// Party/staff highlighting and presence sync are always on, not user-togglable - fixed colors
+	// (party light blue, staff/team pink, taking priority) so meaning never depends on someone else's settings.
 
 	// ---- Info HUD ----
-	// Position defaults (-1) mean "not set yet, use each HUD's own sensible default corner" - the
-	// same convention SkyMelloo's own hud*X/Y fields use. Draggable via SkyMelloo's own HUD layout
-	// editor (key J) when it's installed, since that's the only positioning UI either mod has right
-	// now - see that screen's own doc comment.
+	// -1 means "not set yet, use the HUD's own default corner" - draggable via SkyMelloo's HUD layout editor (key J).
 
 	public boolean playerInfoHudEnabled = false;
 	public int hudPlayerInfoX = -1;
@@ -84,46 +75,28 @@ public final class EssentialsConfig {
 	public int hudConnectionStatusY = -1;
 
 	// ---- Friend Highlighting ----
-	// Moved here from SkyMelloo (its own "Player Highlighting"/"SkyMelloo Friend Color"/"Player Glow
-	// Outline" settings) - staff/party highlighting live here already and are fixed, not user-
-	// adjustable; friend highlighting stays configurable since "which color represents MY friends to
-	// ME" is a legitimate personal preference, unlike staff/party which are shared facts nobody should
-	// be able to fake/hide. See highlight.HighlightManager.
+	// Configurable (unlike staff/party, which are fixed shared facts) since it's a personal preference.
 
 	public boolean friendHighlightEnabled = false;
 	public java.awt.Color friendHighlightColor = new java.awt.Color(0xFF55FFFF, true);
-	// Off by default, same reasoning SkyMelloo's own version had: forcing the glow-outline (visible
-	// through walls) on every friend can hide cosmetic layers from mods like Lunar Client (capes/
-	// wings) for some players - the colored nametag marker alone already gives a see-through
-	// indicator on its own.
+	// Off by default - forcing the through-walls glow on every friend can hide other mods' cosmetic layers.
 	public boolean friendGlowOutlineEnabled = false;
 
 	// ---- Cloud Sync ----
-	// Same reasoning/architecture as SkyMelloo's own cloudSyncEnabled - see CloudSyncManager's doc
-	// comment. Off by default now, same privacy-first bar as presenceSharingEnabled above - a linked
-	// account is no longer enough on its own to start syncing HUD positions/cosmetics, this needs its
-	// own explicit opt-in too.
+	// Off by default - a linked account alone isn't enough to start syncing, this needs its own explicit opt-in.
 
 	public boolean cloudSyncEnabled = false;
 
 	// ---- Sharing & Privacy ----
-	// Master switch for presence reporting itself - everything else this mod (or SkyMelloo, which
-	// hooks into the same report) shares about you (online status, location, cosmetics) depends on
-	// this being on. Off means no presence report is sent at all, not just a reduced one. Moved here
-	// from SkyMelloo (was presenceSharingEnabled there, same field/semantics) since it's a general
-	// account-privacy setting, not SkyBlock/dungeon-specific.
+	// Master switch for presence reporting - off means no report is sent at all, not just a reduced one.
 	public boolean presenceSharingEnabled = false;
 
 	// ---- Cosmetics ----
-	// Same effect set/defaults as SkyMelloo's CosmeticsRenderer. Visible to other Hypixel
-	// Essentials (or SkyMelloo) users nearby via presence sync (see presenceSharingEnabled above).
+	// Visible to other nearby Essentials/SkyMelloo users via presence sync (see presenceSharingEnabled).
 
 	public boolean cosmeticsEnabled = true;
 
-	// Per-effect: the effect still gets reported to others (they still see it via presence sync,
-	// same as always) - only the LOCAL self-render call is skipped, for effects a player finds
-	// distracting or view-blocking up close on their own screen. Keyed by the same effect key
-	// strings PresenceManager/CosmeticsRenderer#tickOthers already use (e.g. "halo", "cherryBlossom").
+	// Per-effect: still reported to others via presence sync, only the local self-render is skipped.
 	public java.util.Set<String> hiddenSelfEffects = new java.util.HashSet<>();
 
 	public boolean isSelfHidden(String effectKey) {
@@ -138,7 +111,7 @@ public final class EssentialsConfig {
 		}
 	}
 
-	/** Bulk-applies one color to every color-capable cosmetic at once - see BulkCosmeticScreen. */
+	// Bulk-applies one color to every color-capable cosmetic at once - see BulkCosmeticScreen.
 	public void setAllColors(Color color) {
 		haloColor = color;
 		rainbowHelixColor = color;
@@ -166,7 +139,7 @@ public final class EssentialsConfig {
 		cloakColor = color;
 	}
 
-	/** Bulk-applies one particle-kind choice (or null to reset everything back to its own default look) to literally every cosmetic that has a particle-kind option at all - see BulkCosmeticScreen. */
+	// Bulk-applies one particle-kind choice (or null to reset to defaults) to every cosmetic with that option.
 	public void setAllParticleKinds(String kindName) {
 		haloParticleKind = kindName;
 		rainbowHelixParticleKind = kindName;
@@ -196,10 +169,7 @@ public final class EssentialsConfig {
 		campfireSmokeParticleKind = kindName;
 		confettiBurstParticleKind = kindName;
 		if (kindName == null) {
-			// The "concrete default" cosmetics never had a null state to begin with - resetting them
-			// means putting back their own original kind, not leaving them null (ParticleKind.byNameOr
-			// only falls back to that default when the string is null OR unrecognized, so either works,
-			// but writing the real name keeps the config file self-explanatory).
+			// Writes back each effect's own real default name instead of leaving it null, so the config file stays self-explanatory.
 			cherryBlossomParticle = "CHERRY_BLOSSOM";
 			fireRingParticle = "FLAME";
 			starRainParticle = "SPARKLE";
@@ -242,7 +212,7 @@ public final class EssentialsConfig {
 		}
 	}
 
-	/** Resets every cosmetic-related field (master switch, enabled flags, colors, particle kinds, hidden-self set) back to its shipped default - leaves playerInfoHudEnabled untouched. */
+	// Resets every cosmetic-related field to its shipped default - leaves playerInfoHudEnabled untouched.
 	public void resetAllCosmetics() {
 		EssentialsConfig fresh = new EssentialsConfig();
 		cosmeticsEnabled = fresh.cosmeticsEnabled;
