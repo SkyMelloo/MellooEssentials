@@ -22,13 +22,8 @@ import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
-/**
- * Proves to sky.melloo.me that a request genuinely comes from a live, logged-in Minecraft client
- * for a specific account, via the exact same joinServer/hasJoined handshake SkyMelloo's
- * ModAuthManager uses - only proves "a real Mojang account is behind this", nothing tied to a
- * Discord/website account, so this needs no login/account system of its own at all. A fresh
- * in-memory-only Ed25519 keypair proves every subsequent request instead of a reusable secret.
- */
+// Proves to sky.melloo.me that a request comes from a live, logged-in client, via the same
+// joinServer/hasJoined handshake vanilla servers use, signed with a fresh in-memory Ed25519 keypair.
 public final class ModAuthManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger("MellooEssentials/ModAuthManager");
 	private static final long REFRESH_MARGIN_MS = 5 * 60 * 1000;
@@ -37,7 +32,7 @@ public final class ModAuthManager {
 	private static volatile long identityExpiresAt = 0;
 	private static volatile KeyPair ephemeralKeyPair = null;
 
-	/** Backs {@link com.melloo.mellooessentials.client.social.ConnectionStatusHud} - tracks whether this handshake has EVER succeeded, not just the current in-flight attempt. Sticky: a later transient failure after a real success stays CONNECTED rather than flickering back to ERROR, since {@link #getIdentity} is retried automatically anyway. */
+	// Sticky: a later transient failure after a real success stays CONNECTED, not ERROR.
 	public enum ConnectionState { CONNECTING, CONNECTED, ERROR }
 
 	private static volatile ConnectionState connectionState = ConnectionState.CONNECTING;
@@ -47,7 +42,6 @@ public final class ModAuthManager {
 		return connectionState;
 	}
 
-	/** Epoch millis of the first successful authentication - only meaningful once {@link #getConnectionState()} is CONNECTED. */
 	public static long getConnectedSince() {
 		return connectedSince;
 	}

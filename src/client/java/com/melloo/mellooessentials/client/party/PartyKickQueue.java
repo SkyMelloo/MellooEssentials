@@ -15,9 +15,8 @@ import java.util.Deque;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 
-// Queued /party kick sending + the join-time kick/block chat prompt. Kicks are queued rather than
-// sent immediately, since Hypixel enforces a ~1s per-command cooldown - drained one at a time with a
-// cooldown-failure retry (requeued at the front). Any mod can call queueKick directly.
+// Queued /party kick sending + the join-time kick/block chat prompt. Kicks queue rather than send
+// immediately, since Hypixel enforces a ~1s per-command cooldown, with cooldown-failure retry.
 public final class PartyKickQueue {
 	private static final Deque<String> pendingKicks = new ArrayDeque<>();
 	// The most recently sent kick, waiting to find out via the cooldown-failure message whether it landed.
