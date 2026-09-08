@@ -19,9 +19,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.BiFunction;
 
-// Decides which players get the forced-glow highlight (in-world nametag + Tab-list row). Staff/party
-// colors are fixed; friend highlighting stays user-configurable. Priority: staff > party > friend.
-// Classification is keyed by UUID, not a loaded Entity - the Tab-list can show a player out of render distance.
+// Decides which players get the forced-glow highlight. Staff/party colors are fixed, friend
+// highlighting is user-configurable. Priority: staff > party > friend.
 public final class HighlightManager {
 	// Same accent blue used for every bordered popup panel across the SkyMelloo family.
 	private static final int PARTY_COLOR = 0xFF66DDFF;
