@@ -16,15 +16,8 @@ import java.security.MessageDigest;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * Version/integrity check for THIS mod, and - since Fabric Loader's mod-container registry is
- * global, not scoped to whichever mod queries it - for SkyMelloo too, if it's installed. Used to be
- * two entirely separate copies of this system (one per mod), which meant two independent join-time
- * checks and two independent "unofficial build" chat notices firing back to back. Consolidated here
- * since this mod already has no dependency direction issue either way (SkyMelloo depends on this
- * mod, never the other way around) - SkyMelloo's own "/sm version"/"/sm legal" now just read the
- * SkyMelloo-prefixed getters below instead of running a duplicate check of their own.
- */
+// Version/integrity check for this mod, and for SkyMelloo too if installed (Fabric Loader's
+// mod-container registry is global). SkyMelloo's own "/sm version" reads the getters below.
 public final class ModVersionManager {
 	private static volatile boolean selfCheckStarted = false;
 	private static volatile boolean selfCompatible = true;
@@ -58,7 +51,6 @@ public final class ModVersionManager {
 		return selfJarHash;
 	}
 
-	/** {@code null} until the one join-time check actually completes (or if it failed outright). */
 	public static ApiClient.VersionCheckResult getLastResult() {
 		return selfLastResult;
 	}
@@ -75,12 +67,10 @@ public final class ModVersionManager {
 		return skyMellooJarHash;
 	}
 
-	/** {@code null} until the one join-time check actually completes, if SkyMelloo isn't installed, or if it failed outright. */
 	public static ApiClient.VersionCheckResult getSkyMellooLastResult() {
 		return skyMellooLastResult;
 	}
 
-	/** Fires a fresh check right now, for "/mes version". */
 	public static void checkNow(java.util.function.Consumer<ApiClient.VersionCheckResult> onResult, java.util.function.Consumer<Long> onCooldown) {
 		checkNowShared(selfLocalVersion, selfJarHash, ApiClient::checkVersion, onResult, onCooldown,
 				System.currentTimeMillis(), lastManualCheckMillis, millis -> lastManualCheckMillis = millis,
@@ -90,7 +80,6 @@ public final class ModVersionManager {
 				});
 	}
 
-	/** Fires a fresh check right now, for SkyMelloo's own "/sm version" - same idea as {@link #checkNow}, just against SkyMelloo's route/cached values instead of this mod's own. */
 	public static void checkSkyMellooNow(java.util.function.Consumer<ApiClient.VersionCheckResult> onResult, java.util.function.Consumer<Long> onCooldown) {
 		checkNowShared(skyMellooLocalVersion, skyMellooJarHash, ApiClient::checkVersionForSkyMelloo, onResult, onCooldown,
 				System.currentTimeMillis(), lastManualCheckMillisSkyMelloo, millis -> lastManualCheckMillisSkyMelloo = millis,
@@ -148,8 +137,7 @@ public final class ModVersionManager {
 			}
 			selfLastResult = result;
 			selfCompatible = result.compatible();
-			// Purely informational - an unverified build gets a one-time handshake chat notice,
-			// nothing is ever disabled.
+			// Purely informational - nothing is ever disabled.
 			if (!result.integrityOk() && client.player != null) {
 				String maintainer = result.maintainerUsername() != null ? result.maintainerUsername() : "the maintainer";
 				client.player.sendSystemMessage(ChatUtil.prefixed(
@@ -162,7 +150,7 @@ public final class ModVersionManager {
 		}));
 	}
 
-	/** Same as {@link #checkSelfOnce} but against SkyMelloo's own mod container/route - silently does nothing if SkyMelloo isn't installed at all. */
+	// Same as checkSelfOnce but against SkyMelloo's own container; no-op if SkyMelloo isn't installed.
 	private static void checkSkyMellooOnce(Minecraft client) {
 		if (skyMellooCheckStarted || client.player == null) {
 			return;
@@ -199,27 +187,12 @@ public final class ModVersionManager {
 		}));
 	}
 
-	/**
-	 * Lowercase hex SHA-256 of {@code container}'s own compiled classes under the given package path
-	 * - {@code null} if that can't be determined safely (Gradle's runClient dev environment before
-	 * anything's compiled; or an origin shape this doesn't confidently recognize). Works for ANY
-	 * loaded mod's container, not just this mod's own, since Fabric Loader's registry is global -
-	 * that's what lets this mod hash SkyMelloo's classes too, not just its own.
-	 * <p>
-	 * Scoped to just the given package on purpose - the goal is verifying that mod's own code
-	 * specifically, not anything Lunar Client bundles alongside it. Opens the packaged jar as its own
-	 * zip filesystem first if the resolved root is a single file, so this reads the REAL compiled
-	 * bytecode regardless of whatever container Lunar wraps it in. Broadly catches {@code Throwable},
-	 * not just the specific exceptions expected here - this runs on the render thread on every launch
-	 * and must never be able to crash the game again; a missing hash is only ever treated as
-	 * "unknown" by the backend, never as "invalid".
-	 */
+	// Lowercase hex SHA-256 of container's compiled classes under the given package. Catches
+	// Throwable broadly since this runs on the render thread every launch and must never crash.
 	private static String computeJarHash(ModContainer container, String... packageSegments) {
 		try {
 			List<Path> roots = container.getRootPaths();
 			if (roots.size() != 1) {
-				// Not the plain single-jar shape this is built for - rather than guess how to combine
-				// multiple roots, just report unknown.
 				return null;
 			}
 			Path root = roots.get(0);
@@ -241,7 +214,6 @@ public final class ModVersionManager {
 		}
 	}
 
-	/** Hashes every {@code .class} file under {@code packageRoot} in a stable (sorted, relative-path) order, or {@code null} if there's nothing there. */
 	private static String hashClassesUnder(Path packageRoot) throws Exception {
 		if (!Files.isDirectory(packageRoot)) {
 			return null;

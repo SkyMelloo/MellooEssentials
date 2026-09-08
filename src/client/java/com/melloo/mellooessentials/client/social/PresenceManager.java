@@ -20,7 +20,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
-/** The single presence report/query loop for both mods - see the extension-point setters below for how SkyMelloo contributes. */
+// The single presence report/query loop for both mods; see the extension-point setters below.
 public final class PresenceManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger("MellooEssentials/PresenceManager");
 	private static final int REPORT_INTERVAL_TICKS = 20; // 1s
@@ -33,25 +33,23 @@ public final class PresenceManager {
 	// Optional contributions from other mods, folded into this mod's own single report.
 	private static Supplier<String> statusTextSupplier = () -> "";
 	private static Supplier<JsonObject> dungeonSyncSupplier = () -> null;
-	// Separate from dungeonSyncSupplier - that one only returns non-null while actually in a
-	// dungeon, so the website has no way to tell "sync enabled but idle" from "genuinely disabled"
-	// (a real report - the Dungeon Sync setting itself is reported persistently instead).
+	// Separate from dungeonSyncSupplier: that only returns non-null while in a dungeon, so the
+	// setting itself is reported persistently to distinguish "enabled but idle" from "disabled".
 	private static java.util.function.BooleanSupplier dungeonSyncEnabledSupplier = () -> false;
 	private static Supplier<List<String>> extraCosmeticsSupplier = List::of;
 	private static DungeonSyncListener dungeonSyncListener = (uuid, username, payload) -> {
 	};
-	// Fired after every report attempt (null = succeeded) so a contributor can track its own send success.
+	// Fired after every report attempt (null = succeeded).
 	private static java.util.function.Consumer<Throwable> reportCompletionListener = error -> {
 	};
-	// True once SkyMelloo has registered - reports identify as SkyMelloo (not just "a mod") so the
-	// server can still tell the two apart, now that only this mod's report ever reaches the network.
+	// True once SkyMelloo has registered - reports identify as SkyMelloo, not just "a mod".
 	private static volatile boolean skyMellooInstalled = false;
 
 	private static final Map<UUID, Map<String, Integer>> otherCosmetics = new ConcurrentHashMap<>();
 	private static final Map<UUID, Map<String, String>> otherParticleKinds = new ConcurrentHashMap<>();
 	private static final Map<UUID, String> otherRoles = new ConcurrentHashMap<>();
 	private static final Map<UUID, String> otherStatusText = new ConcurrentHashMap<>();
-	// True if reported via SkyMelloo specifically (not just any mod) - the mod-user marker's pink-vs-light-blue signal.
+	// True if reported via SkyMelloo specifically - the mod-user marker's pink-vs-light-blue signal.
 	private static final Set<UUID> otherIsSkyMelloo = ConcurrentHashMap.newKeySet();
 
 	private PresenceManager() {
@@ -62,37 +60,31 @@ public final class PresenceManager {
 		void onDungeonSync(String uuid, String username, JsonObject payload);
 	}
 
-	/** A short custom status line to fold into this mod's own report - e.g. SkyMelloo's user-set status text. */
 	public static void setStatusTextSupplier(Supplier<String> supplier) {
 		statusTextSupplier = supplier;
 	}
 
-	/** SkyMelloo's opaque live-dungeon payload, forwarded as-is - called fresh on every report, return null when there's nothing to share. */
 	public static void setDungeonSyncSupplier(Supplier<JsonObject> supplier) {
 		dungeonSyncSupplier = supplier;
 	}
 
-	/** Whether the Dungeon Sync setting itself is on, independent of whether a run is active right now - see the field's own doc comment. */
 	public static void setDungeonSyncEnabledSupplier(java.util.function.BooleanSupplier supplier) {
 		dungeonSyncEnabledSupplier = supplier;
 	}
 
-	/** Extra cosmetic effect keys to fold into the combined outgoing list (e.g. SkyMelloo's "magicMissile") - not user-configurable cosmetics, those stay this mod's own {@link #collectEnabledCosmetics}. */
+	// Extra cosmetic effect keys to fold into the outgoing list (e.g. SkyMelloo's "magicMissile").
 	public static void setExtraCosmeticsSupplier(Supplier<List<String>> supplier) {
 		extraCosmeticsSupplier = supplier;
 	}
 
-	/** Fired once per nearby entry that reported dungeonSync data, each query cycle - lets SkyMelloo react without running its own query loop. */
 	public static void setDungeonSyncListener(DungeonSyncListener listener) {
 		dungeonSyncListener = listener;
 	}
 
-	/** Fired after every report attempt, null error = succeeded - see the field's own doc comment. */
 	public static void setReportCompletionListener(java.util.function.Consumer<Throwable> listener) {
 		reportCompletionListener = listener;
 	}
 
-	/** Call once at SkyMelloo startup - see the field's own doc comment. */
 	public static void setSkyMellooInstalled(boolean installed) {
 		skyMellooInstalled = installed;
 	}
@@ -113,9 +105,8 @@ public final class PresenceManager {
 	}
 
 	private static void reportSelf(Minecraft client) {
-		// Master privacy switch (see EssentialsConfig#presenceSharingEnabled) - off means no report
-		// is sent at all, not just a reduced one. Checked before reportInFlight so toggling this off
-		// never leaves that flag stuck true.
+		// Master privacy switch: off means no report is sent at all, checked before reportInFlight
+		// so toggling this off never leaves that flag stuck true.
 		if (!EssentialsConfig.get().presenceSharingEnabled || reportInFlight) {
 			return;
 		}
@@ -153,11 +144,8 @@ public final class PresenceManager {
 		if (queryInFlight) {
 			return;
 		}
-		// Deliberately INCLUDES the local player's own UUID (unlike SkyMelloo's ModPresenceManager,
-		// which only ever needs to know about others) - otherRoles/isStaff would otherwise never
-		// resolve for yourself at all, since nothing else here ever asks the server "what's MY role".
-		// You're trivially always a member of your own party, so without this, a staff player looking
-		// at themselves fell through to the party (light blue) highlight instead of staff (pink).
+		// Deliberately includes the local player's own UUID, so otherRoles/isStaff can resolve for
+		// yourself too - nothing else here ever asks the server "what's MY role".
 		List<String> uuids = new ArrayList<>();
 		uuids.add(client.player.getUUID().toString());
 		for (var info : client.getConnection().getOnlinePlayers()) {
@@ -191,8 +179,7 @@ public final class PresenceManager {
 						Map<String, Integer> parsed = new HashMap<>();
 						Map<String, String> parsedParticleKinds = new HashMap<>();
 						for (String token : entry.cosmetics()) {
-							// "key=PARTICLENAME" - a color-capable cosmetic switched away from colored dust to a
-							// named particle instead (mutually exclusive with color, see CosmeticEditScreen).
+							// "key=PARTICLENAME" - switched from colored dust to a named particle (mutually exclusive).
 							int particleSep = token.indexOf('=');
 							if (particleSep != -1) {
 								parsed.put(token.substring(0, particleSep), -1);
@@ -239,7 +226,6 @@ public final class PresenceManager {
 				});
 	}
 
-	/** That player's custom status text, or "" if they haven't set one (or aren't a known mod user). */
 	public static String getStatusText(UUID uuid) {
 		return otherStatusText.getOrDefault(uuid, "");
 	}
@@ -248,7 +234,8 @@ public final class PresenceManager {
 		return otherCosmetics.containsKey(uuid);
 	}
 
-	/** True only if this uuid has ALSO reported presence via SkyMelloo's own client recently, not just MellooEssentials' - see the mod-user marker's pink-vs-light-blue choice in EntityDisplayNameMixin/PlayerTabOverlayMixin. isModUser alone can't answer this: it's true for anyone running either mod, since both report to the same /presence endpoint. For the local player specifically, this is known locally and immediately (skyMellooInstalled, set at mod startup) - answered from that directly rather than waiting on the first presence-query round trip (up to QUERY_INTERVAL_TICKS after join), which otherwise left your own marker showing the light-blue default for several real seconds every time, mirroring the same local-player shortcut ModMarkerManager.isModUser already has. */
+	// True only if reported via SkyMelloo specifically, not just any mod (both report to /presence).
+	// The local player answers instantly from skyMellooInstalled instead of waiting on a query round trip.
 	public static boolean isSkyMelloo(UUID uuid) {
 		var local = Minecraft.getInstance().player;
 		if (local != null && local.getUUID().equals(uuid)) {
@@ -262,7 +249,7 @@ public final class PresenceManager {
 		return cosmetics != null && cosmetics.containsKey(effectKey);
 	}
 
-	/** ARGB color that player reported for this effect, or -1 if enabled with no custom color (use the default), 0 if not enabled at all. */
+	// -1 if enabled with no custom color (use the default), 0 if not enabled at all.
 	public static int getCosmeticColor(UUID uuid, String effectKey) {
 		Map<String, Integer> cosmetics = otherCosmetics.get(uuid);
 		if (cosmetics == null) {
@@ -275,13 +262,11 @@ public final class PresenceManager {
 		return color == -1 ? -1 : (color | 0xFF000000);
 	}
 
-	/** Non-null only if that player switched this cosmetic away from colored dust to a named particle instead - see the "key=PARTICLENAME" wire format in collectEnabledCosmetics/queryNearby. */
 	public static String getCosmeticParticleKind(UUID uuid, String effectKey) {
 		Map<String, String> kinds = otherParticleKinds.get(uuid);
 		return kinds == null ? null : kinds.get(effectKey);
 	}
 
-	/** Any sky.melloo.me team role at all ("owner"/"admin"/"developer"/"moderator") - all of them get the fixed staff/contributor pink highlight here, not just owner/admin/developer like SkyMelloo's own narrower distinction. */
 	public static boolean isStaff(UUID uuid) {
 		return otherRoles.get(uuid) != null;
 	}
@@ -290,12 +275,10 @@ public final class PresenceManager {
 		return String.format("%06X", color.getRGB() & 0xFFFFFF);
 	}
 
-	/** "key=PARTICLENAME" if this color-capable cosmetic was switched to a named particle, else "key:HEXCOLOR" - see getCosmeticParticleKind's doc comment. */
 	private static String encode(String key, Color color, String particleKind) {
 		return particleKind != null ? key + "=" + particleKind : key + ":" + hex(color);
 	}
 
-	/** Same idea for a cosmetic with no color at all - bare "key" (its own default look) or "key=PARTICLENAME" (overridden). */
 	private static String encodeParticleOnly(String key, String particleKind) {
 		return particleKind != null ? key + "=" + particleKind : key;
 	}
