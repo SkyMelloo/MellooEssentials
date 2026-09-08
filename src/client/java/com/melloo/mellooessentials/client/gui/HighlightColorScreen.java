@@ -15,12 +15,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/**
- * Small edit popup for Friend Highlighting - enabled toggle, glow-outline toggle, and a color grid
- * (the same 16-standard-Minecraft-color palette {@link CosmeticEditScreen} uses, copied rather than
- * shared since this has no particle-kind concept at all - friend highlighting is a plain glow color,
- * not a cosmetic effect).
- */
+// Small edit popup for Friend Highlighting: enabled toggle, glow-outline toggle, and a color grid.
 public class HighlightColorScreen extends Screen {
 	private static final int PANEL_WIDTH = 300;
 	private static final int PANEL_HEIGHT = 150;
@@ -100,7 +95,6 @@ public class HighlightColorScreen extends Screen {
 		parent.refreshAfterChildClosed();
 	}
 
-	/** See SettingsScreen's own override of this - the vanilla default applies a blur+dark background regardless of anything drawn in extractRenderState. */
 	@Override
 	public void extractBackground(GuiGraphicsExtractor gg, int mouseX, int mouseY, float partialTick) {
 	}

@@ -15,12 +15,8 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * A quick bulk-apply popup opened from the Cosmetics tab's master switch - picks either one color
- * or one particle kind and immediately applies it to every cosmetic that has that option at all
- * (see EssentialsConfig#setAllColors/setAllParticleKinds), instead of opening each cosmetic's own
- * edit popup one at a time.
- */
+// Bulk-apply popup: picks one color or particle kind and applies it to every cosmetic that has
+// that option, instead of opening each cosmetic's own edit popup one at a time.
 public class BulkCosmeticScreen extends Screen {
 	private static final int PANEL_WIDTH = 300;
 	private static final int BORDER_COLOR = 0xFF66DDFF;
@@ -93,7 +89,6 @@ public class BulkCosmeticScreen extends Screen {
 		close();
 	}
 
-	/** See SettingsScreen's own override of this - the vanilla default applies a blur+dark background regardless of anything drawn in extractRenderState. */
 	@Override
 	public void extractBackground(GuiGraphicsExtractor gg, int mouseX, int mouseY, float partialTick) {
 	}

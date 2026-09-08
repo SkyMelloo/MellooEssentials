@@ -4,11 +4,7 @@ import com.melloo.mellooessentials.client.util.Lang;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 
-/**
- * A curated set of vanilla particle types the player can pick between for the "spawn one kind of
- * particle" cosmetics - lets every one of those be reflavored (heart, note, sparkle, ...) instead
- * of being permanently locked to whichever single particle it originally shipped with.
- */
+// Curated vanilla particle types the player can pick between for particle-spawning cosmetics.
 public enum ParticleKind {
 	HEART("heart", ParticleTypes.HEART),
 	NOTE("note", ParticleTypes.NOTE),
@@ -55,12 +51,11 @@ public enum ParticleKind {
 		this.options = options;
 	}
 
-	/** Resolved display name for this particle kind - looked up live rather than cached, so it stays current if the locale ever changes. */
 	public String label() {
 		return Lang.s(translationKey);
 	}
 
-	/** Config stores the enum name as a plain string - falls back cleanly if it's missing/unrecognized (e.g. an older config). */
+	// Config stores the enum name as a plain string; falls back cleanly if missing/unrecognized.
 	public static ParticleKind byNameOr(String name, ParticleKind fallback) {
 		if (name == null) {
 			return fallback;
