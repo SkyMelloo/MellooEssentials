@@ -14,20 +14,11 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.IntSupplier;
 
-/**
- * Lightweight HUD layout editor (opened via J, like Lunar Client's own HUD editor) - drag on-screen
- * HUD elements to reposition them. Draws a placeholder box for each element (sized to match its real
- * render) rather than the real HudElement, so an element that's currently hidden can still be
- * repositioned. Moved here from SkyMelloo - this mod owns the keybind unconditionally now (this is
- * the single HUD layout surface for both mods, same "always bind, don't defer" pattern already used
- * for the G/H keys), natively handling only the two elements THIS mod actually renders (Connection
- * Status, Player Info). SkyMelloo (which depends on this mod, never the other way around) registers
- * its own extra elements via {@link #setExtraElementsProvider} at startup rather than this mod
- * needing to know SkyMelloo exists at all - the same extension-point shape already used for
- * {@code SettingsScreen#setSkyMellooScreenOpener}/{@code ConnectionStatusHud#setAdminBadgeSupplier}.
- */
+// Lightweight HUD layout editor (opened via J) - drag on-screen HUD elements to reposition them.
+// Draws a placeholder box per element instead of the real HudElement, so a hidden one can still be
+// repositioned. Natively handles this mod's own two elements; SkyMelloo registers extras via setExtraElementsProvider.
 public class HudLayoutEditorScreen extends Screen {
-	/** A single draggable HUD-position box. Public (not the private inner class it used to be as SkyMelloo's own screen) so an extra-elements provider registered from outside this class can build its own. */
+	// A single draggable HUD-position box - public so an extra-elements provider outside this class can build its own.
 	public static final class Draggable {
 		final String label;
 		final IntSupplier getX;
@@ -50,11 +41,9 @@ public class HudLayoutEditorScreen extends Screen {
 	private static final int CORNER_TICK_LENGTH = 10;
 	private static final int CORNER_TICK_COLOR = 0xFFFFAA00;
 
-	// (screenWidth, screenHeight) -> that installation's own extra Draggables - SkyMelloo's own HUD
-	// elements (Fishing Combo, Party, Dungeon Score, etc.) when it's installed, null/absent otherwise.
+	// SkyMelloo's own HUD elements (Fishing Combo, Party, Dungeon Score, ...) when it's installed.
 	private static volatile BiFunction<Integer, Integer, List<Draggable>> extraElementsProvider = null;
-	// Run alongside this mod's own EssentialsConfig.save() on close/release - lets SkyMelloo persist
-	// its own config (SkyMellooConfig) without this mod needing to reference that class at all.
+	// Lets SkyMelloo persist its own config alongside this mod's, without a direct class reference.
 	private static volatile Runnable extraSaveHandler = null;
 
 	public static void setExtraElementsProvider(BiFunction<Integer, Integer, List<Draggable>> provider) {
@@ -70,7 +59,7 @@ public class HudLayoutEditorScreen extends Screen {
 	private int dragOffsetX, dragOffsetY;
 	private Integer snapLineX;
 	private Integer snapLineY;
-	/** Corners (TOP_LEFT etc.) where the dragged box is currently equidistant from its two nearby screen edges - drawn as a small accent bracket instead of a full guide line, since it's about two PERPENDICULAR margins matching rather than an alignment target. */
+	// Corners where the dragged box is equidistant from its two nearby screen edges.
 	private final List<Corner> equalMarginCorners = new ArrayList<>();
 
 	private enum Corner { TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT }
@@ -83,9 +72,7 @@ public class HudLayoutEditorScreen extends Screen {
 	protected void init() {
 		EssentialsConfig config = EssentialsConfig.get();
 		elements = new ArrayList<>();
-		// Fixed 2-line layout now (headline + one combined detail line, see
-		// ConnectionStatusHud#extractRenderState's own doc comment) - always exactly 26px tall
-		// regardless of connection state.
+		// Fixed 2-line layout (headline + detail line) - always exactly 26px tall regardless of connection state.
 		int statusWidth = Math.max(
 				this.font.width("Connected ★"),
 				this.font.width("sky.melloo.me · 1h 05m 30s · 999ms")
@@ -101,10 +88,8 @@ public class HudLayoutEditorScreen extends Screen {
 				statusWidth, 26
 		));
 
-		// Built from the exact same lines the real HUD renders right now (see PlayerInfoHud#buildLines)
-		// instead of guessing from hardcoded sample text - two fixed samples were routinely WIDER than
-		// what actually renders for a given player's real FPS/ping/server/area, which meant centering
-		// the (too-wide) editor box left the real, narrower HUD off-center the moment the editor closed.
+		// Built from the exact lines the real HUD renders right now, not hardcoded sample text -
+		// sample text was routinely wider than the real content, leaving the HUD off-center.
 		List<String> playerInfoLines = PlayerInfoHud.buildLines(Minecraft.getInstance());
 		int playerInfoWidth = 8;
 		for (String line : playerInfoLines) {
@@ -175,10 +160,7 @@ public class HudLayoutEditorScreen extends Screen {
 		int clampedX = Math.max(0, Math.min(rawX, this.width - dragging.width));
 		int clampedY = Math.max(0, Math.min(rawY, this.height - dragging.height));
 
-		// Three kinds of snap target per axis - the box's LOW edge (left/top), HIGH edge
-		// (right/bottom), or center can each align to a target; whichever of the three is closest
-		// within threshold wins. Not just centers anymore: an element can now snap its actual edge
-		// flush against the screen edge or another element's edge, not only line up by middle.
+		// The box's low edge, high edge, or center can each align to a target - whichever is closest within threshold wins.
 		List<Integer> lowX = new ArrayList<>(List.of(0));
 		List<Integer> highX = new ArrayList<>(List.of(this.width));
 		List<Integer> centerX = new ArrayList<>(List.of(this.width / 2));
@@ -228,11 +210,7 @@ public class HudLayoutEditorScreen extends Screen {
 		return true;
 	}
 
-	/**
-	 * @return {new low-coordinate (x or y) for this axis, guide line position or -1 if nothing snapped}
-	 * Checks the box's low edge, high edge, and center against their respective target lists and
-	 * takes whichever single alignment (across all three) is closest within {@link #SNAP_THRESHOLD}.
-	 */
+	// Returns {new low-coordinate for this axis, guide line position or -1 if nothing snapped}.
 	private static int[] snapAxis(int rawLow, int size, List<Integer> lowTargets, List<Integer> highTargets, List<Integer> centerTargets) {
 		int bestLow = rawLow;
 		int bestDist = SNAP_THRESHOLD + 1;
@@ -311,7 +289,7 @@ public class HudLayoutEditorScreen extends Screen {
 		super.extractRenderState(gg, mouseX, mouseY, partialTick);
 	}
 
-	/** A short L-shaped bracket at one corner of the dragged box, indicating its margins to the two nearby screen edges are currently equal - a different kind of alignment than the full-line edge/center guides above, since it's about two PERPENDICULAR gaps matching rather than a shared position. */
+	// An L-shaped bracket at one corner, indicating the box's margins to the two nearby screen edges are equal.
 	private void drawCornerTick(GuiGraphicsExtractor gg, Corner corner, int x, int y, int width, int height) {
 		int left = x, right = x + width, top = y, bottom = y + height;
 		switch (corner) {
