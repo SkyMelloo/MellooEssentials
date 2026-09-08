@@ -5,12 +5,7 @@ import net.minecraft.client.multiplayer.ServerData;
 
 import java.util.Locale;
 
-/**
- * Whether the local player is connected to Hypixel at all, as opposed to any other server or
- * singleplayer - checked via the connected server's own IP address, same signal PartyTracker
- * already used internally before this was pulled out into a shared utility so the rest of the mod
- * could gate on it too.
- */
+// Whether the local player is connected to Hypixel, checked via the connected server's IP.
 public final class HypixelDetector {
 	private HypixelDetector() {
 	}
