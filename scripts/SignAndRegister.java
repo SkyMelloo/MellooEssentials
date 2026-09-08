@@ -12,18 +12,8 @@ import java.util.Base64;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * MellooEssentials' own copy of skymelloo's SignAndRegister.java - deliberately independent, not a
- * shared/parameterized script (own key, own token, own class-scope, own endpoint). Run by Gradle's
- * "reportBuild" task right after every build:
- *   1. Hashes ONLY this build's own compiled classes (com/melloo/mellooessentials/*.class), opening
- *      the jar as its own zip filesystem.
- *   2. Signs {version}:{hash} with the Ed25519 private key that lives ONLY on this machine
- *      (~/.mellooessentials-signing/private_key.pem) - never in either repo, never deployed.
- *   3. POSTs {version, hash, signature} to sky.melloo.me, authenticated with a separate shared
- *      token (not the private key).
- * Never fails the actual Gradle build - every real error here is caught and logged, not thrown.
- */
+// MellooEssentials' own independent copy of skymelloo's SignAndRegister.java (own key, own token,
+// own endpoint). Hashes this build's classes, signs and POSTs to sky.melloo.me. Never fails the build.
 public class SignAndRegister {
     public static void main(String[] args) {
         try {
@@ -87,7 +77,7 @@ public class SignAndRegister {
         }
     }
 
-    /** Same scoped-hash approach as skymelloo's own script - hashes ONLY com/melloo/mellooessentials/*.class, opened via the jar's own zip filesystem, in a stable sorted order. */
+    // Same scoped-hash approach as skymelloo's own script: only com/melloo/mellooessentials/*.class.
     private static String hashOwnClasses(Path jarPath) throws Exception {
         try (FileSystem zipFs = FileSystems.newFileSystem(jarPath)) {
             Path packageRoot = zipFs.getPath("com", "melloo", "mellooessentials");
@@ -126,7 +116,7 @@ public class SignAndRegister {
         return keyFactory.generatePrivate(new PKCS8EncodedKeySpec(der));
     }
 
-    /** Set by Gradle from the site_url property, so a build registers against whichever deployment it targets. */
+    // Set by Gradle from the site_url property, so a build registers against whichever deployment it targets.
     private static String siteUrl() {
         String value = System.getenv("SKYMELLOO_SITE_URL");
         if (value == null || value.isBlank()) {
