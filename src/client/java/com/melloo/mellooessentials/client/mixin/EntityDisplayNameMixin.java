@@ -12,16 +12,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Targets BOTH Entity and Player: Player.getDisplayName() is a full override (calls
- * decorateDisplayNameComponent, not Entity's default team-formatting logic), so a mixin on
- * Entity.class alone would silently never run for Player instances at all.
- * <p>
- * The only place a nametag marker gets added, even when SkyMelloo (which depends on this mod) is
- * also installed - see {@link ModMarkerManager}'s own doc comment for why the pink-vs-light-blue
- * choice is resolved from server-provided presence data ({@link PresenceManager#isSkyMelloo}) here
- * directly, rather than a second mixin stacking a second icon on top.
- */
+// Targets both Entity and Player: Player.getDisplayName() is a full override, so a mixin on
+// Entity.class alone never runs for Player instances. Also adds the nametag marker.
 @Mixin({Entity.class, Player.class})
 public abstract class EntityDisplayNameMixin {
 	private static final Identifier LIGHT_BLUE_DYE_SPRITE = Identifier.withDefaultNamespace("item/light_blue_dye");
