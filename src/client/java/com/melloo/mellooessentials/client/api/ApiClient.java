@@ -19,12 +19,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Thin client for sky.melloo.me's mod-auth + presence routes. The ephemeral-keypair handshake
- * ({@link ModAuthManager}) proves a live Mojang session for any mod. Presence report/query also
- * return each nearby player's cosmetics and sky.melloo.me team role, used for cosmetics sync and
- * staff highlighting.
- */
+// Thin client for sky.melloo.me's mod-auth + presence routes. The ephemeral-keypair handshake
+// (ModAuthManager) proves a live Mojang session for any mod.
 public final class ApiClient {
 	private static final String BASE_URL = SiteConfig.url("/api/public/mod/v1");
 	private static final HttpClient HTTP = HttpClient.newBuilder()
@@ -60,7 +56,7 @@ public final class ApiClient {
 		return postJson(path, body, identity, "X-MellooEssentials-Client");
 	}
 
-	/** clientHeaderName lets the presence report identify itself as SkyMelloo when SkyMelloo is installed - see reportPresence. */
+	// clientHeaderName lets the presence report identify itself as SkyMelloo when installed - see reportPresence.
 	private static CompletableFuture<JsonObject> postJson(String path, JsonObject body, ModAuthManager.ModIdentity identity, String clientHeaderName) {
 		byte[] bodyBytes = body.toString().getBytes(StandardCharsets.UTF_8);
 		HttpRequest.Builder builder = HttpRequest.newBuilder()
@@ -85,7 +81,7 @@ public final class ApiClient {
 				});
 	}
 
-	/** A single one-second retry on a plain timeout - see SkyMelloo's SkyMellooApiClient, same reasoning. */
+	// A single one-second retry on a plain timeout - see SkyMelloo's SkyMellooApiClient.
 	private static CompletableFuture<HttpResponse<String>> sendWithRetry(HttpRequest request) {
 		return HTTP.sendAsync(request, HttpResponse.BodyHandlers.ofString())
 				.handle((response, error) -> {
@@ -135,7 +131,7 @@ public final class ApiClient {
 				.header("X-SkyMelloo-Signature", headers.signature());
 	}
 
-	/** Only the path is signed, never the query string - none of these routes have sensitive/mutating query params. Prepends "/api/public/mod/v1" to match the full signed path the server expects. */
+	// Only the path is signed, never the query string - none of these routes have sensitive/mutating query params.
 	private static String requestPath(String pathWithQuery) {
 		int queryStart = pathWithQuery.indexOf('?');
 		String pathOnly = queryStart < 0 ? pathWithQuery : pathWithQuery.substring(0, queryStart);
@@ -167,11 +163,11 @@ public final class ApiClient {
 
 	// ---- admin account verification ----
 
-	/** {@code linkedAccountName} is the website account's display name (Discord nickname/username) - null against an older server that doesn't send it yet. */
+	// linkedAccountName is null against an older server that doesn't send it yet.
 	public record VerifyResult(boolean ok, String error, String linkedAccountName) {
 	}
 
-	/** Completes the account-linking flow: the website account generated {@code code} on sky.melloo.me/account, this proves (via the signed request) the in-game account owns it. Server-side is mod-agnostic - any mod's valid signature works, same as every other /mod/* route. */
+	// Proves (via the signed request) that this account owns a code generated on sky.melloo.me/account.
 	public static CompletableFuture<VerifyResult> verifyAccount(String code, ModAuthManager.ModIdentity identity) {
 		JsonObject body = new JsonObject();
 		body.addProperty("code", code);
@@ -183,16 +179,13 @@ public final class ApiClient {
 
 	// ---- presence (cosmetics sync + role lookup) ----
 
-	/** cosmetics: e.g. "halo:AA33FF" (custom color) or "cherryBlossom" (default color) - see PresenceManager. role is sky.melloo.me's server-resolved team role ("owner"/"admin"/"developer"/"moderator"), or null. skymelloo is true if this uuid has also reported presence via SkyMelloo's own client recently (server tells the two mod clients apart by which of X-SkyMelloo-Client/X-MellooEssentials-Client header showed up on the report) - this is the actual signal the mod-user marker's pink/light-blue choice is based on, see PresenceManager#isSkyMelloo. dungeonSync is SkyMelloo's own opaque live-dungeon payload, forwarded as-is - null unless that uuid is running SkyMelloo and currently in a dungeon with sync enabled. */
+	// skymelloo is true if this uuid also reported via SkyMelloo's client recently (see
+	// PresenceManager#isSkyMelloo). dungeonSync is null unless that uuid is in a dungeon with sync enabled.
 	public record PresenceEntry(String uuid, String username, List<String> cosmetics, String role, boolean skymelloo, String status, JsonObject dungeonSync) {
 	}
 
-	/**
-	 * dungeonSync/location may be null - only SkyMelloo (via its PresenceManager extension points) ever
-	 * has either. asSkyMelloo sends X-SkyMelloo-Client instead of X-MellooEssentials-Client - the
-	 * server's only signal for the mod-user marker's pink-vs-light-blue choice (see PresenceEntry's
-	 * doc comment) - when SkyMelloo is installed and contributing to this report.
-	 */
+	// dungeonSync/location may be null - only SkyMelloo ever has either. asSkyMelloo sends
+	// X-SkyMelloo-Client instead of X-MellooEssentials-Client when SkyMelloo is contributing this report.
 	public static CompletableFuture<Void> reportPresence(String uuid, String username, List<String> cosmetics, String status, JsonObject dungeonSync, boolean afk, boolean accountLinked, String location, boolean asSkyMelloo, boolean dungeonSyncEnabled, ModAuthManager.ModIdentity identity) {
 		JsonObject body = new JsonObject();
 		body.addProperty("uuid", uuid);
@@ -211,8 +204,7 @@ public final class ApiClient {
 		if (location != null) {
 			body.addProperty("location", location);
 		}
-		// Persistent, independent of dungeonSync - that field is only ever non-null while actually in
-		// a dungeon, so the website has no other way to tell "sync on but idle" from "genuinely off".
+		// Independent of dungeonSync, which is only non-null while actually in a dungeon.
 		body.addProperty("dungeonSyncEnabled", dungeonSyncEnabled);
 		String clientHeader = asSkyMelloo ? "X-SkyMelloo-Client" : "X-MellooEssentials-Client";
 		return postJson("/presence", body, identity, clientHeader).thenApply(root -> null);
@@ -255,10 +247,7 @@ public final class ApiClient {
 		});
 	}
 
-	// -------------------------------------------------------------------------------------------
-	// SkyMelloo Friends + relay chat - keyed only by the anonymous per-launch ModIdentity also used
-	// for presence, never a sky.melloo.me account link, despite the SkyMelloo-branded name.
-	// -------------------------------------------------------------------------------------------
+	// Friends + relay chat - keyed by the anonymous per-launch ModIdentity, not an account link.
 	public record FriendEntry(String uuid, String username) {
 	}
 
@@ -288,7 +277,7 @@ public final class ApiClient {
 		});
 	}
 
-	/** {@code status} is one of "self", "already_friends", "accepted" (they'd already requested you back), "pending", or "limit". */
+	// status is one of "self", "already_friends", "accepted", "pending", or "limit".
 	public record FriendRequestResult(String username, String status) {
 	}
 
@@ -317,7 +306,7 @@ public final class ApiClient {
 		return friendAction("/friends/remove", username, identity);
 	}
 
-	/** Sends a DM to a friend by username - the server rejects it (403) unless the two accounts are already confirmed friends. */
+	// The server rejects this (403) unless the two accounts are already confirmed friends.
 	public static CompletableFuture<Boolean> sendRelayMessage(String toUsername, String text, ModAuthManager.ModIdentity identity) {
 		JsonObject body = new JsonObject();
 		body.addProperty("toUsername", toUsername);
@@ -327,7 +316,7 @@ public final class ApiClient {
 				.exceptionally(error -> false);
 	}
 
-	/** Broadcasts to a caller-resolved list of party-member UUIDs (the server has no visibility into real Hypixel parties, so this trusts whichever roster the mod itself resolved). */
+	// The server has no visibility into real Hypixel parties - trusts whichever roster the mod resolved.
 	public static CompletableFuture<Boolean> sendRelayPartyMessage(List<String> toUuids, String text, ModAuthManager.ModIdentity identity) {
 		JsonObject body = new JsonObject();
 		JsonArray uuidsArr = new JsonArray();
@@ -341,11 +330,11 @@ public final class ApiClient {
 				.exceptionally(error -> false);
 	}
 
-	/** One relayed message waiting in the inbox - {@code scope} is "dm" or "party". */
+	// scope is "dm" or "party".
 	public record RelayMessage(String fromUuid, String fromUsername, String text, String scope) {
 	}
 
-	/** Drains (not peeks) everything currently queued for this account - polled every few seconds by RelayChatManager. */
+	// Drains (not peeks) everything queued for this account - polled every few seconds by RelayChatManager.
 	public static CompletableFuture<List<RelayMessage>> fetchRelayInbox(ModAuthManager.ModIdentity identity) {
 		return getJson("/relay/inbox", identity).thenApply(root -> {
 			List<RelayMessage> result = new ArrayList<>();
@@ -363,14 +352,8 @@ public final class ApiClient {
 		}).exceptionally(error -> List.of());
 	}
 
-	// -------------------------------------------------------------------------------------------
-	// Account permissions + Cloud Sync - /mod/permissions is the same account-linked check SkyMelloo
-	// uses, keyed only by the Minecraft account behind the identity, nothing mod-specific about it.
-	// /mod/settings IS mod-specific (the server tells this mod's settings blob apart from SkyMelloo's
-	// own the same way it tells presence reports apart - by which of X-SkyMelloo-Client/
-	// X-MellooEssentials-Client showed up on the request), so the two mods' Cloud Sync never collide
-	// even though both call this same path.
-	// -------------------------------------------------------------------------------------------
+	// /mod/permissions isn't mod-specific; /mod/settings is - the server tells this mod's settings
+	// blob apart from SkyMelloo's own by which client header showed up on the request.
 
 	public static CompletableFuture<Map<String, Boolean>> fetchPermissions(ModAuthManager.ModIdentity identity) {
 		return getJson("/permissions", identity).thenApply(root -> {
@@ -387,7 +370,7 @@ public final class ApiClient {
 	public record CloudSettingsResult(JsonObject settings) {
 	}
 
-	/** The cloud-synced settings blob for the account behind this identity, or null if nothing's been saved yet (or the request failed). */
+	// null if nothing's been saved yet, or the request failed.
 	public static CompletableFuture<CloudSettingsResult> fetchCloudSettings(ModAuthManager.ModIdentity identity) {
 		return getJson("/settings", identity)
 				.thenApply(root -> root.has("settings") && root.get("settings").isJsonObject()
@@ -396,7 +379,7 @@ public final class ApiClient {
 				.exceptionally(error -> null);
 	}
 
-	/** Saves the current settings for cloud sync - a failure here just means the next sync attempt tries again. Returns whether it actually succeeded, for debug logging. */
+	// A failure here just means the next sync attempt tries again; returns success for debug logging.
 	public static CompletableFuture<Boolean> pushCloudSettings(ModAuthManager.ModIdentity identity, JsonObject settings) {
 		JsonObject body = new JsonObject();
 		body.add("settings", settings);
@@ -407,11 +390,11 @@ public final class ApiClient {
 
 	// ---- encountered staff ----
 
-	/** One nearby player, as seen in the tab list - all the server needs to check them against the staff/owner roster. */
+	// One nearby player as seen in the tab list - enough for the server to check against the staff roster.
 	public record StaffCheckEntry(String uuid, String username) {
 	}
 
-	/** Reports everyone currently visible in the tab list so the server can record an encounter for any of them that resolve to a real staff/owner role - fire-and-forget. */
+	// Fire-and-forget - the server records an encounter for anyone here who resolves to a staff role.
 	public static CompletableFuture<Void> reportStaffEncounters(List<StaffCheckEntry> players, ModAuthManager.ModIdentity identity) {
 		JsonObject body = new JsonObject();
 		JsonArray playersArr = new JsonArray();
@@ -425,7 +408,7 @@ public final class ApiClient {
 		return postJson("/staff-encounters", body, identity).thenApply(root -> null);
 	}
 
-	/** One staff/owner member this account has ever been seen alongside, per the server's own encounter log - see the "/mellooessentials hitstaff" command. websiteDisplayName is null when that staff uuid has no linked sky.melloo.me website account. */
+	// websiteDisplayName is null when that staff uuid has no linked sky.melloo.me website account.
 	public record StaffEncounterEntry(String uuid, String username, String role, long firstSeenMillis, long lastSeenMillis, String websiteDisplayName) {
 	}
 
@@ -451,21 +434,16 @@ public final class ApiClient {
 		}).exceptionally(error -> List.of());
 	}
 
-	/** Same shape as SkyMelloo's own version-check result - see ModVersionManager. */
+	// Same shape as SkyMelloo's own version-check result - see ModVersionManager.
 	public record VersionCheckResult(boolean compatible, String minVersion, String message, boolean upToDate, String updateAvailableMessage, boolean integrityOk, String buildKind, String latestVersion, String latestPublicVersion, String maintainerUsername) {
 	}
 
-	/** {@code jarHash} is optional - null when running from a dev/exploded classpath. Unauthenticated - the server's own MellooEssentials-specific route doesn't require a signed identity for this. */
+	// jarHash is null when running from a dev/exploded classpath. Unauthenticated route.
 	public static CompletableFuture<VersionCheckResult> checkVersion(String version, String jarHash) {
 		return checkVersionAt("/mellooessentials/version-check", version, jarHash);
 	}
 
-	/**
-	 * Same check, against SkyMelloo's own route instead - this mod's ModVersionManager now checks
-	 * SkyMelloo too (if installed) as well as itself, so a SkyMelloo-only checkOnce isn't needed
-	 * anymore and neither mod duplicates this whole system. See ModVersionManager for how the two
-	 * results are kept separate.
-	 */
+	// Same check against SkyMelloo's own route - see ModVersionManager for how the two results stay separate.
 	public static CompletableFuture<VersionCheckResult> checkVersionForSkyMelloo(String version, String jarHash) {
 		return checkVersionAt("/version-check", version, jarHash);
 	}
@@ -490,7 +468,7 @@ public final class ApiClient {
 	public record LegalInfo(String imprint, String privacy, String terms) {
 	}
 
-	/** "/mes legal" - shares SkyMelloo's own /legal route (imprint/privacy/terms are mod-agnostic), gated the same way integrity is above. */
+	// "/mes legal" - shares SkyMelloo's own /legal route, gated the same way integrity is above.
 	public static CompletableFuture<LegalInfo> fetchLegalInfo(String jarHash) {
 		String url = "/legal" + (jarHash != null ? "?hash=" + java.net.URLEncoder.encode(jarHash, StandardCharsets.UTF_8) : "");
 		return getJson(url, null).thenApply(root -> new LegalInfo(
