@@ -20,13 +20,8 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * {@code /mes roll <amount>} - a dice roll; {@code /mes roll party} - picks a random party member
- * (including yourself); {@code /mes roll <word> <seconds>} - a timed raffle, whoever types
- * {@code <word>} in party chat within the time limit gets entered, one winner picked at the end.
- * Ported over from SkyMelloo - never actually SkyBlock-specific (party/dice mechanics work the same
- * on any Hypixel game), so it belongs with the other generic party tools here.
- */
+// /mes roll <amount>: dice roll. /mes roll party: random party member. /mes roll <word> <seconds>:
+// timed raffle, whoever types <word> in party chat within the limit gets entered.
 public final class PartyGamesManager {
 	// "Party > [MVP++] Name: message" or "Party > Name: message" - Hypixel never shows more than one
 	// bracketed rank tag in practice.
@@ -95,15 +90,13 @@ public final class PartyGamesManager {
 		send(client, Lang.s("mellooessentials.chat.party_games.roll_member_result", chosen));
 	}
 
-	/** Starts a timed "say {word} in party chat" raffle - entries collected by the listener registered in {@link #init}. */
 	public static void startWordRoll(Minecraft client, String word, int seconds) {
 		wordRollTarget = word;
 		wordRollEntrants.clear();
 		send(client, Lang.s("mellooessentials.chat.party_games.word_roll_start", word, seconds));
 		String targetAtStart = word;
 		TickDelay.schedule(seconds * 20, () -> {
-			// A newer roll could have overwritten/cleared this one before the timer ran out - only
-			// resolve if this callback still belongs to the CURRENT raffle, not a stale leftover one.
+			// Only resolve if this callback still belongs to the current raffle, not a stale one.
 			if (!targetAtStart.equals(wordRollTarget)) {
 				return;
 			}

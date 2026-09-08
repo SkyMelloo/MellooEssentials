@@ -18,16 +18,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-/**
- * A personal, client-side-only block list for Hypixel party members - separate from
- * {@link com.melloo.mellooessentials.client.social.FriendsManager} and never synced to
- * sky.melloo.me, since blocking someone is purely a local preference about who's allowed in YOUR
- * party, not something anyone else needs to see. Blocking someone auto-kicks them from any party
- * you lead the moment they join (see {@link PartyKickQueue#handleMemberJoined}), and immediately if
- * they're already in your current party at the moment you block them. Moved here from SkyMelloo
- * alongside the rest of the party join/kick system - block/kick was never actually SkyMelloo-specific
- * (kicking is a plain Hypixel `/party kick`), so any mod can use and build on this now.
- */
+// A personal, client-side-only block list for party members, never synced to sky.melloo.me.
+// Blocking someone auto-kicks them from any party you lead, on join or immediately if already in it.
 public final class BlockedUsersManager {
 	private static final Path FILE = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir().resolve("mellooessentials-blocked.txt");
 	private static final Set<String> blocked = new LinkedHashSet<>();
@@ -69,7 +61,7 @@ public final class BlockedUsersManager {
 		return blocked.stream().anyMatch(b -> b.equalsIgnoreCase(username));
 	}
 
-	/** @return false if they were already blocked. */
+	// Returns false if they were already blocked.
 	public static synchronized boolean block(String username) {
 		ensureLoaded();
 		if (isBlocked(username)) {
@@ -80,7 +72,7 @@ public final class BlockedUsersManager {
 		return true;
 	}
 
-	/** @return false if they weren't blocked in the first place. */
+	// Returns false if they weren't blocked in the first place.
 	public static synchronized boolean unblock(String username) {
 		ensureLoaded();
 		boolean removed = blocked.removeIf(b -> b.equalsIgnoreCase(username));
@@ -95,7 +87,6 @@ public final class BlockedUsersManager {
 		return new ArrayList<>(blocked);
 	}
 
-	/** Blocks {@code username}, and if they're currently in the local player's own party and the local player is the leader, kicks them right away instead of waiting for their next join. */
 	public static void blockAndKickIfPresent(Minecraft client, String username) {
 		boolean wasNewlyBlocked = block(username);
 		client.player.sendSystemMessage(ChatUtil.prefixed(wasNewlyBlocked
@@ -106,7 +97,8 @@ public final class BlockedUsersManager {
 		}
 	}
 
-	/** Best-effort UUID lookup for a party member by username, from the local player list - block-then-kick only needs this to check current membership, never a network call. Returns a random (never-matching) UUID if not found in the tab list right now, which just means the immediate-kick check below simply won't fire (they'll still be caught on their next join like normal). */
+	// Best-effort lookup from the local player list; a random never-matching UUID if not found just
+	// means the immediate-kick check won't fire (they're still caught on their next join).
 	private static java.util.UUID uuidOf(Minecraft client, String username) {
 		if (client.getConnection() != null) {
 			for (var info : client.getConnection().getOnlinePlayers()) {
