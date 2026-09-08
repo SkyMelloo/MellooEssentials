@@ -8,11 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Replaces the vanilla rotating panorama on the main menu with a single static image, stretched to
- * fill the screen - a cosmetic branding touch, not a settings-gated feature (same "always on"
- * treatment as the party/staff glow, nothing here needs to be toggleable).
- */
+// Replaces the vanilla rotating panorama on the main menu with a single static branding image.
 @Mixin(TitleScreen.class)
 public abstract class TitleBackgroundMixin {
 	private static final Identifier BACKGROUND = Identifier.fromNamespaceAndPath("mellooessentials", "textures/gui/title_background.png");
