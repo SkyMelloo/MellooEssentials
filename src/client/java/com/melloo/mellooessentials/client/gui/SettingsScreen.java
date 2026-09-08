@@ -18,12 +18,8 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/**
- * Centered, tabbed popup card (same bordered-panel style as SkyMelloo's StringInputScreen).
- * Clicking a cosmetic that actually has options (a color OR a particle choice - never both, see
- * CosmeticEditScreen's own doc comment on why) opens {@link CosmeticEditScreen} for it; one with
- * neither just toggles directly in place.
- */
+// Centered, tabbed popup card. Clicking a cosmetic with options (color or particle, never both)
+// opens CosmeticEditScreen; one with neither just toggles directly in place.
 public class SettingsScreen extends Screen {
 	private static final int PANEL_MAX_WIDTH = 420;
 	private static final int PANEL_MAX_HEIGHT = 460;
@@ -54,18 +50,11 @@ public class SettingsScreen extends Screen {
 		AbstractWidget create(int x, int y, int w, int h);
 	}
 
-	// Static (not per-instance) so the scroll position survives fully closing and reopening the
-	// settings menu, not just switching tabs within one open session - there's only ever one of
-	// these menus open at a time, so sharing this across instances is safe.
+	// Static so the scroll position survives closing and reopening the menu, not just switching tabs.
 	private static final java.util.Map<Tab, Integer> scrollByTab = new java.util.EnumMap<>(Tab.class);
 
-	// SkyMelloo (which depends on this mod, never the other way around) registers a callback that
-	// opens its own settings screen here at startup, so this screen can offer a button back to it
-	// without ever referencing SkyMelloo's classes directly - same extension-point pattern as
-	// ModMarkerManager#setSpriteOverride. A plain Runnable (not a Supplier<Screen>) since SkyMelloo's
-	// own open-settings entry point is itself a self-contained static method that calls
-	// Minecraft#setScreen internally (plus a couple of refresh side effects) rather than just
-	// constructing a Screen. Null (no button shown) when SkyMelloo isn't installed.
+	// SkyMelloo registers a callback here at startup so this screen can offer a button back to it
+	// without referencing SkyMelloo's classes directly. Null (no button shown) when not installed.
 	private static volatile Runnable openSkyMellooScreen = null;
 
 	public static void setSkyMellooScreenOpener(Runnable opener) {
@@ -82,7 +71,7 @@ public class SettingsScreen extends Screen {
 		this.parent = parent;
 	}
 
-	/** Opens straight to the Cosmetics tab instead of General - used by SkyMelloo's own menu, which links here directly instead of maintaining a second, duplicate cosmetics UI of its own. */
+	// Opens straight to the Cosmetics tab - used by SkyMelloo's own menu instead of a duplicate UI.
 	public SettingsScreen(Screen parent, boolean openToCosmetics) {
 		this(parent);
 		if (openToCosmetics) {
@@ -132,9 +121,6 @@ public class SettingsScreen extends Screen {
 		switch (currentTab) {
 			case GENERAL -> {
 				rows.add(infoRow(Lang.s("mellooessentials.gui.settings.general.always_active")));
-				// Everything else this mod (or SkyMelloo, which hooks into the same report) shares about
-				// you depends on this - grouped as its own section rather than buried among unrelated
-				// rows, so it's obvious at a glance there's one place to shut it all off for privacy.
 				rows.add(headerRow(Lang.s("mellooessentials.gui.settings.header.sharing_privacy")));
 				rows.add(boolRow(Lang.s("mellooessentials.gui.settings.sharing_privacy.sync"), () -> c.presenceSharingEnabled, v -> c.presenceSharingEnabled = v));
 				rows.add(headerRow(Lang.s("mellooessentials.gui.settings.friend_highlighting")));
@@ -204,9 +190,6 @@ public class SettingsScreen extends Screen {
 				rows.add(infoRow(Lang.s("mellooessentials.gui.settings.cloud.info_sync")));
 				rows.add(infoRow(Lang.s("mellooessentials.gui.settings.cloud.info_requires_link")));
 				rows.add(boolRow(Lang.s("mellooessentials.gui.settings.cloud.sync_toggle"), () -> c.cloudSyncEnabled, v -> c.cloudSyncEnabled = v));
-				// Manual Push Now/Pull Now buttons removed - push already happens automatically on every
-				// settings close (see removed() below), and pull happens automatically on its own
-				// schedule elsewhere, so these were redundant actions cluttering the tab.
 			}
 		}
 		rebuildRows();
@@ -274,24 +257,19 @@ public class SettingsScreen extends Screen {
 
 	@Override
 	public void removed() {
-		// Fires regardless of close path (ESC via onClose, the Done button, or the SkyMelloo Config
-		// button below all just call Minecraft#setScreen, which invokes this on the outgoing screen) -
-		// covers essentially every real settings change with one hook.
+		// Fires regardless of close path (ESC, Done, or SkyMelloo Config all call Minecraft#setScreen).
 		CloudSyncManager.push(Minecraft.getInstance());
 		super.removed();
 	}
 
-	/** Called by CosmeticEditScreen when it closes, so the list redraws with any change immediately. */
+	// Called by CosmeticEditScreen when it closes, so the list redraws with any change immediately.
 	void refreshAfterChildClosed() {
 		rebuildRows();
 	}
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor gg, int mouseX, int mouseY, float partialTick) {
-		// Thin full-screen tint, same value as SkyMelloo's own settings screen (PANEL_BG there) -
-		// the popup card below only covers the center, so without this the rest of the screen falls
-		// through to whatever the engine's own un-overridden background default is, which doesn't
-		// read as transparent/see-through the way this mod's other screens do.
+		// Thin full-screen tint, same value as SkyMelloo's own settings screen - the popup only covers the center.
 		gg.fill(0, 0, this.width, this.height, 0x30000000);
 		int px = panelX();
 		int py = panelY();
@@ -317,12 +295,12 @@ public class SettingsScreen extends Screen {
 		return (x, y, w, h) -> new BoolRowWidget(x, y, w, h, label, getter, setter, null);
 	}
 
-	/** A clickable label row with no toggle state of its own - just runs an action, see BulkCosmeticScreen. */
+	// A clickable label row with no toggle state of its own - just runs an action.
 	private RowFactory actionRow(String label, Runnable action) {
 		return (x, y, w, h) -> new ActionRowWidget(x, y, w, h, label, action);
 	}
 
-	/** Opens {@link HighlightColorScreen} - a plain enabled/outline/color popup, no particle-kind concept at all (unlike the cosmetic rows below). */
+	// Opens HighlightColorScreen - a plain enabled/outline/color popup, no particle-kind concept.
 	private RowFactory highlightColorRow(String label, BooleanSupplier getter, Consumer<Boolean> setter,
 			BooleanSupplier outlineGetter, Consumer<Boolean> outlineSetter,
 			java.util.function.Supplier<java.awt.Color> colorGetter, Consumer<java.awt.Color> colorSetter) {
@@ -330,14 +308,14 @@ public class SettingsScreen extends Screen {
 				() -> Minecraft.getInstance().setScreen(new HighlightColorScreen(this, label, getter, setter, outlineGetter, outlineSetter, colorGetter, colorSetter)));
 	}
 
-	/** Color-capable - also gets a particle-kind cycle (with a "Default (Color)" entry) alongside the color grid, see CosmeticEditScreen. */
+	// Color-capable - also gets a particle-kind cycle alongside the color grid, see CosmeticEditScreen.
 	private RowFactory colorCosmeticRow(String effectKey, BooleanSupplier getter, Consumer<Boolean> setter, java.util.function.Supplier<java.awt.Color> colorGetter, Consumer<java.awt.Color> colorSetter, java.util.function.Supplier<String> particleGetter, Consumer<String> particleSetter) {
 		String label = Lang.s("mellooessentials.cosmetic." + effectKey);
 		return (x, y, w, h) -> new BoolRowWidget(x, y, w, h, label, getter, setter,
 				() -> Minecraft.getInstance().setScreen(new CosmeticEditScreen(this, label, effectKey, getter, setter, colorGetter, colorSetter, particleGetter, particleSetter)));
 	}
 
-	/** No color, but its "default" look is a special fixed combo rather than one named kind, so it still gets a "Default (Original)" entry - see CosmeticEditScreen. */
+	// No color, but its default look is a special fixed combo - see CosmeticEditScreen.
 	private RowFactory defaultableParticleCosmeticRow(String effectKey, BooleanSupplier getter, Consumer<Boolean> setter, java.util.function.Supplier<String> particleGetter, Consumer<String> particleSetter) {
 		String label = Lang.s("mellooessentials.cosmetic." + effectKey);
 		return (x, y, w, h) -> new BoolRowWidget(x, y, w, h, label, getter, setter,
@@ -441,7 +419,7 @@ public class SettingsScreen extends Screen {
 		}
 	}
 
-	/** A clickable label row with a "›" hint arrow, same look as a BoolRowWidget minus the toggle dot - just runs an action on click. */
+	// Same look as BoolRowWidget minus the toggle dot, plus a "›" hint arrow - just runs an action.
 	private final class ActionRowWidget extends AbstractWidget {
 		private final String label;
 		private final Runnable action;
@@ -477,12 +455,7 @@ public class SettingsScreen extends Screen {
 		}
 	}
 
-	/**
-	 * One row: toggle dot + name. Left-click opens the edit popup if {@code openEditor} is non-null
-	 * (this cosmetic actually has a color or particle choice) - the popup itself has the enabled
-	 * toggle. Right-click ALWAYS toggles enabled/disabled directly, no matter what left-click does,
-	 * for a quick on/off without opening anything.
-	 */
+	// Left-click opens the edit popup if openEditor is non-null; right-click always toggles directly.
 	private final class BoolRowWidget extends AbstractWidget {
 		private final String label;
 		private final BooleanSupplier getter;
@@ -542,7 +515,7 @@ public class SettingsScreen extends Screen {
 		}
 	}
 
-	/** Same flat accent-tinted button style as SkyMelloo's StringInputScreen popup. */
+	// Same flat accent-tinted button style as SkyMelloo's StringInputScreen popup.
 	static final class StyledButton extends AbstractWidget {
 		private final int accentColor;
 		private final Runnable onClick;

@@ -10,39 +10,29 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.function.Supplier;
 
-/**
- * Persistent HUD showing whether this mod has authenticated with sky.melloo.me (the same
- * joinServer/hasJoined identity handshake {@link ModAuthManager} performs for presence/cosmetics
- * sync) and, once connected, how long it's been connected for - a live-ticking duration, not just a
- * static "Connected" label. This is now the SINGLE connection-status HUD for both mods - SkyMelloo's
- * own WhitelistStatusHud (which used to duplicate this box, and whose separate ModAuthManager
- * session used to silently steal this one's server-side session slot - see lib/modAuth.js's fix)
- * was removed in favor of registering into the two extension points below instead, so SkyMelloo's
- * admin-link badge and its own sky.melloo.me ping reading still show up here, one box, not two.
- */
+// Persistent HUD showing sky.melloo.me auth status and a live-ticking connected duration. Single
+// shared box for both mods - SkyMelloo plugs its admin badge and ping reading into the extension points below.
 public final class ConnectionStatusHud implements HudElement {
 	public static final ConnectionStatusHud INSTANCE = new ConnectionStatusHud();
 
-	// Populated by SkyMelloo (when installed) - see SkyMellooClient#onInitializeClient. Left null
-	// when only this mod is installed, since neither concept (an admin-linked account, a
-	// sky.melloo.me API ping reading) exists here on its own.
+	// Populated by SkyMelloo when installed; left null when only this mod is installed.
 	private static volatile Supplier<String> adminBadgeSupplier = null;
 	private static volatile Supplier<String> extraLineProvider = null;
 
 	private ConnectionStatusHud() {
 	}
 
-	/** The account's actual highest role label (e.g. "Owner") to show as "Connected as {role}" - null for a non-admin account, a SkyMelloo-only concept. */
+	// Shown as "Connected as {role}" - null for a non-admin account.
 	public static void setAdminBadgeSupplier(Supplier<String> supplier) {
 		adminBadgeSupplier = supplier;
 	}
 
-	/** A short extra fragment appended to the detail line (e.g. SkyMelloo's own "42ms" sky.melloo.me API ping reading, NOT prefixed with "sky.melloo.me" itself - this HUD already names the domain once) - return null to omit it that frame. */
+	// A short extra fragment appended to the detail line (e.g. "42ms") - return null to omit it that frame.
 	public static void setExtraLineProvider(Supplier<String> provider) {
 		extraLineProvider = provider;
 	}
 
-	/** A real filled circle via horizontal scanlines, not a flat square - {@code gg.fill} only draws rectangles, so this is the cheapest way to get a round dot at these tiny (2-6px) radii. */
+	// A real filled circle via horizontal scanlines - gg.fill only draws rectangles.
 	private static void fillCircle(GuiGraphicsExtractor gg, int cx, int cy, int radius, int color) {
 		for (int dy = -radius; dy <= radius; dy++) {
 			int dx = (int) Math.round(Math.sqrt((double) radius * radius - (double) dy * dy));
@@ -50,7 +40,7 @@ public final class ConnectionStatusHud implements HudElement {
 		}
 	}
 
-	/** "1h 05m 30s", dropping leading zero units - matches the compact style used elsewhere for durations. */
+	// "1h 05m 30s", dropping leading zero units.
 	private static String formatDuration(long millis) {
 		long totalSeconds = millis / 1000;
 		long hours = totalSeconds / 3600;
@@ -65,14 +55,8 @@ public final class ConnectionStatusHud implements HudElement {
 		return seconds + "s";
 	}
 
-	/**
-	 * Always exactly two lines - a bold headline ("Connected"/"Connecting…"/"Connection Failed") and
-	 * one detail line combining everything else (domain, duration, admin badge, ping) that used to be
-	 * spread across up to three separate stacked lines. A round, gently pulsing status dot (a soft
-	 * translucent halo breathing behind a solid center, both real circles via fillCircle rather than
-	 * flat squares) sits right before the headline text, plus a colored accent stripe down the panel's
-	 * left edge - the stripe and the dot share one color, reading as a single deliberate accent.
-	 */
+	// Always exactly two lines: a bold headline and a detail line combining domain/duration/badge/ping.
+	// A pulsing status dot (halo + solid center) and a matching accent stripe share one color.
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor gg, DeltaTracker deltaTracker) {
 		EssentialsConfig config = EssentialsConfig.get();
@@ -115,33 +99,18 @@ public final class ConnectionStatusHud implements HudElement {
 
 		int x = config.hudConnectionStatusX >= 0 ? config.hudConnectionStatusX : 6;
 		int y = config.hudConnectionStatusY >= 0 ? config.hudConnectionStatusY : 6;
-		// Text gutter widened from 10px to 20px (see dotCx/textX below) - the dot's halo was nearly
-		// touching both the accent stripe and the text at its peak pulse size, a live report confirmed
-		// visible overlap. +20 -> +30 keeps the panel's own right-hand padding proportional to that.
-		// +30 -> +42: the role-badge headline ("Connected as <Role> ★") visibly stuck out past the
-		// box's right edge, a real report - the trailing "★" glyph measures narrower than it actually
-		// renders, so the fixed +30 slack wasn't enough once the headline got this much longer.
 		int width = Math.max(client.font.width(headline), client.font.width(detail)) + 42;
 		int height = 26;
 
-		// Panel: the same (x-4, y-3) dark-glass-fill origin every other HUD in both mods uses (keeps
-		// this element's drag-preview box in SkyMelloo's HUD layout editor aligned with what actually
-		// renders), plus a colored accent stripe down the left edge.
+		// Same (x-4, y-3) dark-glass-fill origin every other HUD uses, plus a colored accent stripe on the left edge.
 		gg.fill(x - 4, y - 3, x + width - 4, y - 3 + height, 0x99101018);
 		gg.fill(x - 4, y - 3, x - 2, y - 3 + height, statusColor);
 
-		// Gentle 2s breathing cycle (sine, not a linear ramp - reads as "alive" rather than mechanical)
-		// driving both the halo's and the core's radius, not just their opacity - a size pulse is what
-		// actually reads as "pulsing" at a glance, an opacity-only fade doesn't. Bumped up from
-		// 4-6/2-3 to 5-7/3-4 - larger radii approximate a circle more smoothly via fillCircle's
-		// scanlines (a tiny 2-3px "circle" reads as blocky/square at a glance, a real live report).
+		// A size pulse (not just opacity) is what actually reads as "pulsing" at a glance.
 		double pulse = (Math.sin((System.currentTimeMillis() % 2000) / 2000.0 * Math.PI * 2) + 1) / 2;
 		int haloRadius = 5 + (int) Math.round(pulse * 2);
 		int coreRadius = 3 + (int) Math.round(pulse);
 
-		// Centered on the headline's own text row, with real clearance on both sides now (2px from the
-		// accent stripe on the left, ~6px from the text on the right, even at the halo's largest pulse
-		// size) instead of nearly touching either one.
 		int dotCx = x + 7;
 		int dotCy = y + 4;
 		int textX = x + 20;
