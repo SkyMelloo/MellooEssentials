@@ -14,13 +14,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Fetches a flat player-face avatar image over HTTP (mc-heads.net, the same public avatar service
- * sky.melloo.me itself already uses) and registers it as a real Minecraft texture, keyed by UUID.
- * Works for ANY player regardless of where they are on the network - needed for the Social menu's
- * friends list, since a friend can be offline or anywhere else entirely. Moved here from SkyMelloo
- * alongside the rest of the Friends system.
- */
+// Fetches a flat player-face avatar image over HTTP (mc-heads.net) and registers it as a real
+// Minecraft texture, keyed by UUID. Works for any player, online or not.
 public final class RemoteFaceTextureCache {
 	private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
 	private static final Map<UUID, Identifier> resolved = new ConcurrentHashMap<>();
@@ -31,7 +26,7 @@ public final class RemoteFaceTextureCache {
 	private RemoteFaceTextureCache() {
 	}
 
-	/** Cached texture Identifier for this player's face, or null if not resolved yet - calling this kicks off a fetch if one isn't already pending or recently failed, so just poll it again next frame. */
+	// Null if not resolved yet; kicks off a fetch, so just poll again next frame.
 	public static Identifier get(UUID uuid) {
 		if (uuid == null) {
 			return null;
