@@ -21,18 +21,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Short message relay riding entirely on sky.melloo.me - a "/mes chat" DM to a confirmed friend, or
- * a broadcast to whichever current party members are also running this mod - that never touches
- * real Hypixel chat at all. Moved here from SkyMelloo, alongside {@link FriendsManager}. Since the
- * relay server is self-operated, there's no need to detect a specific in-game command to trigger it
- * - callers just POST straight to sky.melloo.me and it fans out to whichever other clients are
- * polling their inbox below.
- * <p>
- * Polling (not push) since there's no persistent connection to the backend - {@link #POLL_INTERVAL_TICKS}
- * is deliberately tighter than {@link PresenceManager}'s report cycle so a chat actually feels
- * like a chat, not a slow status update.
- */
+// Short message relay riding entirely on sky.melloo.me - a "/mes chat" DM or party broadcast that
+// never touches real Hypixel chat. Polls rather than pushes, tighter interval than PresenceManager.
 public final class RelayChatManager {
 	private static final int POLL_INTERVAL_TICKS = 60; // 3s
 	private static final Logger LOGGER = LoggerFactory.getLogger("MellooEssentials/RelayChatManager");
@@ -80,8 +70,7 @@ public final class RelayChatManager {
 		String tag = isParty ? "§d[Party] " : "§d[DM] ";
 		MutableComponent name = Component.literal("§b" + message.fromUsername());
 		if (!isParty) {
-			// Click a DM sender's name to pre-fill a reply, same convenience as clicking a real
-			// player's name in vanilla chat to /msg them.
+			// Click a DM sender's name to pre-fill a reply, same as clicking a name in vanilla chat.
 			name.setStyle(Style.EMPTY
 					.withClickEvent(new ClickEvent.SuggestCommand("/mes chat " + message.fromUsername() + " "))
 					.withHoverEvent(new HoverEvent.ShowText(Lang.c("mellooessentials.tooltip.chat.reply"))));
@@ -89,7 +78,6 @@ public final class RelayChatManager {
 		client.player.sendSystemMessage(ChatUtil.prefixed(Component.literal(tag).append(name).append(Component.literal("§7: §f" + message.text()))));
 	}
 
-	/** Sends a DM - {@code toUsername} must already be a confirmed friend (checked both here for a fast local error, and again server-side regardless). */
 	public static void sendDirect(Minecraft client, String toUsername, String text) {
 		if (!FriendsManager.isFriend(toUsername)) {
 			client.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.dm.not_friend", toUsername)));
@@ -110,12 +98,7 @@ public final class RelayChatManager {
 				}));
 	}
 
-	/**
-	 * Broadcasts to whichever current party members are also running this mod (detected via
-	 * {@link PresenceManager#isModUser}) - unlike a DM, party membership itself is the trust
-	 * boundary here, no separate friend requirement. Silently does nothing if nobody else in the
-	 * party is running the mod, rather than posting a message nobody else will ever see.
-	 */
+	// Party membership itself is the trust boundary here, no separate friend requirement.
 	public static void sendPartyBroadcast(Minecraft client, String text) {
 		List<String> recipients = PartyTracker.getMembers().stream()
 				.filter(uuid -> !uuid.equals(client.player.getUUID()))
@@ -141,14 +124,8 @@ public final class RelayChatManager {
 				}));
 	}
 
-	/**
-	 * Fire-and-forget party ANNOUNCEMENT relay, deliberately quiet (no "sent"/"nobody online" chat
-	 * line - see {@link #sendPartyBroadcast} for the user-initiated equivalent that DOES confirm) -
-	 * used for automatic background announcements from SkyMelloo (dungeon run messages, debug logs),
-	 * which already print their own message text locally through their normal LOCAL-delivery code
-	 * path, so echoing it again here would just double it up. Any leader-only restriction is the
-	 * CALLER's responsibility - this method itself always just sends.
-	 */
+	// Fire-and-forget, deliberately quiet (no "sent"/"nobody online" chat line) - used for automatic
+	// background announcements that already print their own text locally elsewhere.
 	public static void sendPartyAnnouncement(Minecraft client, String text) {
 		if (client.player == null) {
 			return;
