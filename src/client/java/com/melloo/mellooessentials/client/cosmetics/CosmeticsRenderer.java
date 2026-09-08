@@ -16,12 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Purely cosmetic, client-side-only particle effects (no gameplay impact to Hypixel). Off by
- * default, toggled per-effect in the settings screen. Also renders these same effects around
- * OTHER nearby players also running MellooEssentials (or SkyMelloo), detected via
- * {@link PresenceManager} - opt-in (presenceSharingEnabled), no account/login needed at all.
- */
+/** Purely cosmetic, client-side particle effects; also renders them on nearby opted-in players via {@link PresenceManager}. */
 public final class CosmeticsRenderer {
 	private CosmeticsRenderer() {
 	}
@@ -179,12 +174,7 @@ public final class CosmeticsRenderer {
 		return color.getRGB() & 0xFFFFFF;
 	}
 
-	/**
-	 * The core of the color/particle unification: every "color" cosmetic defaults to a colored dust
-	 * particle, but can instead be switched to one of the named {@link ParticleKind}s - which has its
-	 * own fixed, non-recolorable look, so the two are mutually exclusive (see CosmeticEditScreen's own
-	 * doc comment on why). {@code particleKindName} is the raw config string (null = stay on dust).
-	 */
+	/** A "color" cosmetic's dust particle, or a fixed {@link ParticleKind} override if one is set - mutually exclusive. */
 	private static net.minecraft.core.particles.ParticleOptions colorOrParticle(String particleKindName, int rgb, float size) {
 		ParticleKind override = ParticleKind.byNameOr(particleKindName, null);
 		return override != null ? override.options : new DustParticleOptions(rgb, size);
@@ -196,20 +186,12 @@ public final class CosmeticsRenderer {
 		return override != null ? override.options : defaultOptions;
 	}
 
-	/**
-	 * A stable per-player animation offset (in ticks) derived from the player's own UUID - not
-	 * random, just spread out, so two different players never land on the exact same offset by luck
-	 * of a shared static counter.
-	 */
+	/** Stable per-player animation offset derived from UUID, so players don't sync up by coincidence. */
 	private static long tickOffset(AbstractClientPlayer player) {
 		return player.getUUID().hashCode() & 0xFFFF;
 	}
 
-	/**
-	 * A drift-free, per-player rotation phase derived from world time plus a fixed per-player offset
-	 * - speed stays independent of player count, and different players are never in phase with each
-	 * other by coincidence. {@code speed} is in radians/tick.
-	 */
+	/** Drift-free per-player rotation phase from world time + {@link #tickOffset}. {@code speed} is in radians/tick. */
 	private static float phase(Minecraft client, AbstractClientPlayer player, float speed) {
 		long gameTime = client.level.getGameTime() + tickOffset(player);
 		double raw = (gameTime * (double) speed) % (Math.PI * 2);
@@ -377,23 +359,12 @@ public final class CosmeticsRenderer {
 		glowyDust(client, rgb, x, y, z, 1.0F, EssentialsConfig.get().haloGlow, kindOverride);
 	}
 
-	/**
-	 * Spawns a cosmetic's normal colored dust particle - or, if {@code glowing}, vanilla's actual
-	 * {@link ParticleTypes#GLOW} particle instead (same one glow squid ink uses) for a real glowing
-	 * look, not just a bigger dust particle. Trade-off: GLOW ignores the cosmetic's chosen color
-	 * while this is on, since it's not colorable like dust particles are - there's no vanilla
-	 * particle that's both truly glowing AND custom-colored without registering a whole new one.
-	 */
+	/** Colored dust, or vanilla's {@link ParticleTypes#GLOW} if {@code glowing} - GLOW ignores the chosen color, it isn't colorable. */
 	private static void glowyDust(Minecraft client, int rgb, double x, double y, double z, float size, boolean glowing) {
 		glowyDust(client, rgb, x, y, z, size, glowing, null);
 	}
 
-	/**
-	 * Same as the 6-arg overload, plus an optional fixed {@code kindOverride} - if set, it wins over
-	 * both color AND glow, spawning that particle kind exactly as-is instead. Backs the "Color /
-	 * Particle" picker's non-color entries (see {@code ColorPickerPage}), letting a cosmetic use a
-	 * different particle kind instead of just a recolored redstone dust.
-	 */
+	/** Same as the 6-arg overload, but {@code kindOverride} (if set) wins over both color and glow. */
 	private static void glowyDust(Minecraft client, int rgb, double x, double y, double z, float size, boolean glowing, ParticleKind kindOverride) {
 		if (kindOverride != null) {
 			client.level.addParticle(kindOverride.options, x, y, z, 0, 0, 0);
@@ -476,12 +447,7 @@ public final class CosmeticsRenderer {
 	private static final int WAVE_DURATION_TICKS = 22;
 	private static final float WAVE_MAX_RADIUS = 2.6F;
 
-	/**
-	 * Shockwave rings that expand outward from a fixed spot (where they spawned), not the player's
-	 * current position - otherwise a ring visually "drags" along if they keep moving while it's
-	 * still expanding. The spawn timer is tracked per-player so this works independently for
-	 * multiple people (yourself and any other SkyMelloo user) with Wave enabled at once.
-	 */
+	/** Shockwave rings expand from a fixed spawn point, not the player's current position, so they don't drag while moving. */
 	private static void renderWave(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		UUID uuid = player.getUUID();
 		int timer = waveSpawnTimers.getOrDefault(uuid, 0) + 1;
@@ -509,15 +475,12 @@ public final class CosmeticsRenderer {
 		});
 	}
 
-	/** A small cloud hovering above your head that continuously rains on you. */
-	/** A proper volumetric cloud (wide radius, puffs at varying heights within a band) with rain actually spawning from inside its own footprint, not a small offset area below it. */
+	/** A volumetric cloud hovering above the player's head, raining from inside its own footprint. */
 	private static void renderRainCloud(Minecraft client, AbstractClientPlayer player, String particleKindName) {
 		RandomSource random = player.getRandom();
 		double cloudY = player.getY() + player.getBbHeight() + 1.3;
-		double cloudRadius = 1.8; // was a ~0.4-block spread, widened for more visual presence
+		double cloudRadius = 1.8;
 
-		// Several puffs per tick at varying heights within a band, spread across the full radius -
-		// reads as an actual volumetric cloud instead of a thin, sparse flat disc.
 		for (int i = 0; i < 3; i++) {
 			if (random.nextFloat() < 0.6F) {
 				double angle = random.nextDouble() * Math.PI * 2;
@@ -582,10 +545,7 @@ public final class CosmeticsRenderer {
 		client.level.addParticle(kind.options, x, y, z, 0, 0, 0);
 	}
 
-	/**
-	 * A 3D Lissajous curve traced around your body - three sine waves on different axes/frequencies
-	 * weave a constantly-shifting knot pattern instead of a simple circle or spiral.
-	 */
+	/** A 3D Lissajous curve - three sine waves on different axes weave a constantly-shifting knot. */
 	private static void renderLissajous(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float lissajousT = phase(client, player, 0.05F);
 
@@ -607,11 +567,7 @@ public final class CosmeticsRenderer {
 
 	private static final double ROSE_K_PERIOD_TICKS = 5.0 / 0.003; // matches the old "roseK += 0.003F, wraps 2..7" ramp
 
-	/**
-	 * A rose/rhodonea curve (r = radius * cos(k * theta)) traced with many simultaneous points at
-	 * once instead of a sparse handful - the whole flower-petal shape is visible every frame, slowly
-	 * morphing its petal count (k) and spinning, for a much denser/busier effect than Lissajous.
-	 */
+	/** A rose/rhodonea curve (r = radius * cos(k * theta)), petal count (k) slowly morphing while it spins. */
 	private static void renderRoseCurve(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float roseAngle = phase(client, player, 0.04F);
 		long gameTime = client.level.getGameTime() + tickOffset(player);
@@ -755,12 +711,7 @@ public final class CosmeticsRenderer {
 	private static final int GALAXY_ARMS = 3;
 	private static final int GALAXY_POINTS_PER_ARM = 10;
 
-	/**
-	 * A proper multi-arm spiral: radius grows linearly from 0 (feet) to a max (above your head) along
-	 * each rotating arm, so it always reads as a spiral fanning outward - the earlier version used an
-	 * unwrapped rotation angle that grew without bound, which loses float precision over time and
-	 * made every point collapse toward the same spot after a while.
-	 */
+	/** Multi-arm spiral, radius growing linearly from feet to head - angle must stay bounded, an unwrapped angle loses float precision over time. */
 	private static void renderSpiralGalaxy(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float galaxyRot = phase(client, player, 0.12F);
 
@@ -916,10 +867,7 @@ public final class CosmeticsRenderer {
 
 	private static final int BLACK_HOLE_RINGS = 4;
 
-	/**
-	 * A solid-looking sphere of black particles at your center, with colored particles orbiting it
-	 * in concentric rings - inner rings spin faster than outer ones, like a real accretion disk.
-	 */
+	/** A black particle sphere at the center, with colored rings orbiting it - inner rings spin faster, like an accretion disk. */
 	private static void renderBlackHole(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float bodyMid = player.getBbHeight() * 0.5F;
 		double centerY = player.getY() + bodyMid;
@@ -1051,11 +999,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/**
-	 * A proper lightning strike, arcing all the way down from well above you to your feet - long,
-	 * densely segmented (double-thick main bolt), and with the occasional fork branching off partway
-	 * down before tapering out, like real lightning's fractal look rather than one clean line.
-	 */
+	/** A lightning strike from well above down to the feet, densely segmented with occasional branching forks. */
 	private static void renderLightningAura(Minecraft client, AbstractClientPlayer player, String particleKindName) {
 		RandomSource random = player.getRandom();
 		if (random.nextFloat() > 0.05F) {
@@ -1129,25 +1073,11 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/**
-	 * A pair of wings trailing from your back, shoulder-level rather than mid-back. Modeled as a
-	 * broad, rounded wing PLANFORM - at every point along the span (root to tip) there's a real
-	 * CHORD, a filled strip from the leading edge back to a curved, cambered trailing edge, whose
-	 * width follows a taper that's widest near the root and comes to a point at the tip. Reads as a
-	 * big soft moth wing rather than a sharp bird wing - see {@link #renderPhoenixWings} for the
-	 * feathered version. The two wings aren't a perfect mirror of each other - a slightly different
-	 * flap phase per side.
-	 * <p>
-	 * The flap itself is a genuine TRAVELING WAVE along the span, not a rigid fan: each point
-	 * oscillates at its OWN phase, lagging further behind the root the further out it sits along the
-	 * span - the classic S-curve/whip shape of a real wingbeat, where the tip visibly trails the root
-	 * instead of everything swinging in lockstep.
-	 */
+	/** Broad rounded wing planform with a traveling-wave flap - span points lag behind the root for a whip shape. */
 	private static void renderMothWings(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float mothWingFlap = phase(client, player, 0.15F);
-		float bodyMid = player.getBbHeight() * 0.78F; // shoulder-level, not mid-back
-		// yBodyRot (not getYRot(), which follows your look direction) - otherwise the wings twist
-		// with your head every time you look around instead of staying attached to your back.
+		float bodyMid = player.getBbHeight() * 0.78F;
+		// yBodyRot, not getYRot() - the latter follows look direction and would twist the wings with the head.
 		float yaw = player.yBodyRot * (float) (Math.PI / 180F);
 		double backX = Math.sin(yaw);
 		double backZ = -Math.cos(yaw);
@@ -1157,9 +1087,7 @@ public final class CosmeticsRenderer {
 		int spanSteps = 12;
 		int chordSteps = 5;
 		float[] phaseOffsetBySide = {0F, 0.35F};
-		// How far (in radians) the wingtip's own oscillation trails behind the root's - the actual
-		// "wave" of the flap. 0 would be a rigid fan instead of a whip.
-		float waveLagPerT = 1.1F;
+		float waveLagPerT = 1.1F; // radians the tip's oscillation trails the root's - 0 would be a rigid fan
 		double maxChord = 0.85; // widest part of the wing, near the root
 
 		for (int sideIndex = 0; sideIndex < 2; sideIndex++) {
@@ -1167,9 +1095,7 @@ public final class CosmeticsRenderer {
 
 			for (int i = 0; i <= spanSteps; i++) {
 				double t = (double) i / spanSteps;
-				// Each point along the span oscillates at its OWN phase (lagging further behind the
-				// root the further out it is), not just a shared angle scaled by amplitude - this is
-				// what actually produces the traveling-wave/whip shape instead of a rigid swing.
+				// Each span point oscillates at its own phase, not a shared angle - produces the traveling wave.
 				float localPhase = mothWingFlap + phaseOffsetBySide[sideIndex] - (float) (t * waveLagPerT);
 				float localFlap = (float) Math.sin(localPhase) * 0.6F;
 				double hingeAmount = localFlap * t;
@@ -1177,16 +1103,11 @@ public final class CosmeticsRenderer {
 				double leadingVertical = -t * t * 0.22 + hingeAmount * 0.25; // shallow droop, small flap component
 				double leadingBack = 0.3 + t * 0.55 + hingeAmount * 0.9; // flap mainly sweeps back/forward
 
-				// Wing planform: broad near the root, tapering smoothly to a point at the tip - a real
-				// wing's silhouette, not a uniform-width strip.
-				double chordWidth = maxChord * (1 - t * t);
+				double chordWidth = maxChord * (1 - t * t); // broad near the root, tapering to a point at the tip
 
 				for (int cStep = 0; cStep <= chordSteps; cStep++) {
 					double cFrac = (double) cStep / chordSteps; // 0 = leading edge, 1 = trailing edge
-					// Camber: the trailing edge curves further down and back than a flat perpendicular
-					// offset would - the actual curved surface of a real wing/airfoil, not a flat fan
-					// blade.
-					double camber = Math.sin(cFrac * Math.PI * 0.5);
+					double camber = Math.sin(cFrac * Math.PI * 0.5); // trailing edge curves down/back, not a flat fan blade
 					double lateral = leadingLateral - camber * chordWidth * 0.15;
 					double vertical = leadingVertical - camber * chordWidth * 0.9;
 					double back = leadingBack + camber * chordWidth * 0.55;
@@ -1204,20 +1125,7 @@ public final class CosmeticsRenderer {
 		client.level.addParticle(colorOrParticle(particleKindName, rgb, size), x, y, z, 0, 0, 0);
 	}
 
-	/**
-	 * A pair of pointed, swept-back wings, built from two distinct pieces rather than one formula
-	 * stretched over the whole shape:
-	 * <ul>
-	 *   <li>MEMBRANE - the same tapered-chord-with-camber sweep {@link #renderMothWings} uses (known
-	 *       to actually read as a wing), but swept further back and tapering to a real point at the
-	 *       tip instead of a round moth silhouette - a sharper, more raptor-like shape.</li>
-	 *   <li>FEATHER TIPS - a handful of individual STRAIGHT spikes extending past the trailing edge
-	 *       along the outer half of the wing, fanning out slightly toward the tip - simple linear
-	 *       extensions, not curves, the way real primary feathers visibly separate at a wingtip.</li>
-	 *   <li>EMBER FLICKER - a sparse, randomized spark off the very tip - stochastic placement, the
-	 *       "on fire" signature of a phoenix.</li>
-	 * </ul>
-	 */
+	/** Pointed swept-back wings: a chord-swept membrane (sharper taper than {@link #renderMothWings}), straight feather-tip spikes, and a random ember flicker off the tip. */
 	private static void renderPhoenixWings(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float flap = phase(client, player, 0.15F);
 		float bodyMid = player.getBbHeight() * 0.8F;
@@ -1242,8 +1150,6 @@ public final class CosmeticsRenderer {
 			double[] trailVert = new double[spanSteps + 1];
 			double[] trailBack = new double[spanSteps + 1];
 
-			// --- MEMBRANE: tapered chord sweep, same family as Moth Wings but swept further back and
-			// coming to a real point at the tip instead of a round silhouette. ---
 			for (int i = 0; i <= spanSteps; i++) {
 				double t = (double) i / spanSteps;
 				double hinge = localFlap * t;
@@ -1251,9 +1157,7 @@ public final class CosmeticsRenderer {
 				double leadingVertical = -t * t * 0.15 + hinge * 0.3;
 				double leadingBack = 0.25 + t * 0.85 + hinge * 0.7;
 
-				// Sharper taper than a moth's round wing - stays fuller through the middle, then
-				// narrows to a real point at the tip.
-				double chordWidth = maxChord * Math.pow(1 - t, 1.3);
+				double chordWidth = maxChord * Math.pow(1 - t, 1.3); // fuller through the middle, real point at the tip
 				for (int cStep = 0; cStep <= chordSteps; cStep++) {
 					double cFrac = (double) cStep / chordSteps;
 					double camber = Math.sin(cFrac * Math.PI * 0.5);
@@ -1270,9 +1174,7 @@ public final class CosmeticsRenderer {
 				}
 			}
 
-			// --- FEATHER TIPS: individual straight spikes extending past the trailing edge along the
-			// outer half of the span - a simple linear extension, deliberately NOT a curve, so
-			// individual feathers visibly separate near the tip instead of blending into the membrane. ---
+			// Straight (not curved) spikes past the trailing edge, outer half of the span only.
 			int featherStart = spanSteps / 2;
 			int featherPoints = 5;
 			for (int i = featherStart; i <= spanSteps; i++) {
@@ -1310,18 +1212,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/**
-	 * An actual jagged, slowly writhing vertical crack hovering just off your back - drawn as a dense
-	 * zigzag LINE of particles (not scattered random points), with nearby ambient particles visibly
-	 * getting pulled INTO the slit (the same inward-pull idea as the Plasma spell), plus unstable puffs
-	 * of smoke escaping outward. A real "tear in reality" with actual structure and motion to it, not
-	 * just sparse random drift near the player.
-	 * <p>
-	 * Made noticeably denser/busier: nearly double the points along the crack itself, a second haze layer just off to the
-	 * side of the line so it reads as an actual torn OPENING with some width to it (not a single-pixel
-	 * line), up to 2 simultaneous suction pulls per tick instead of one 50%-chance pull, and more
-	 * frequent/bigger unstable puffs.
-	 */
+	/** A jagged, slowly writhing zigzag crack off the player's back, pulling nearby particles in with occasional smoke puffs escaping out. */
 	private static void renderVoidRift(Minecraft client, AbstractClientPlayer player) {
 		float voidRiftPhase = phase(client, player, 0.06F);
 		RandomSource random = player.getRandom();
@@ -1340,10 +1231,7 @@ public final class CosmeticsRenderer {
 		Vec3[] line = new Vec3[points];
 		for (int i = 0; i < points; i++) {
 			double t = (double) i / (points - 1);
-			// Jagged on TWO horizontal axes now, not just side-to-side - plus
-			// a little vertical jitter so it doesn't read as a perfectly straight line with only one
-			// wobble direction. Different frequencies/phases per axis so it looks like a real fractured
-			// crack, not one clean sine wave traced twice.
+			// Jagged on two horizontal axes plus vertical jitter, different frequencies per axis so it reads as a fracture, not one sine wave.
 			double sideJag = Math.sin(t * Math.PI * 3 + voidRiftPhase * 2) * 0.22;
 			double backJag = Math.cos(t * Math.PI * 2.3 + voidRiftPhase * 1.6) * 0.18;
 			double verticalJitter = Math.sin(t * Math.PI * 5 + voidRiftPhase * 2.5) * 0.12;
@@ -1379,8 +1267,7 @@ public final class CosmeticsRenderer {
 			client.level.addParticle(ParticleTypes.SQUID_INK, sx, sy, sz, vx, vy, vz);
 		}
 
-		// Unstable puff escaping outward, like the rift briefly losing containment - more frequent and
-		// more particles per puff than before.
+		// Unstable puff escaping outward, like the rift briefly losing containment.
 		if (random.nextFloat() < 0.06F) {
 			Vec3 origin = line[random.nextInt(points)];
 			for (int i = 0; i < 3; i++) {
@@ -1391,12 +1278,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/**
-	 * A genuine 3-strand BRAID of star sparkles running the whole body height
-	 * (feet to above the head): each strand orbits the player at the same vertical rate but offset
-	 * 120° apart, so at any given height the 3 strands are evenly spaced and visibly swap positions as
-	 * they rise - the actual over/under crossing look of a real braid, not just a static ring shape.
-	 */
+	/** A 3-strand braid of sparkles from feet to head - strands orbit 120° apart, crossing over/under as they rise. */
 	private static void renderStarWeave(Minecraft client, AbstractClientPlayer player, String particleKindName) {
 		float starWeaveAngle = phase(client, player, 0.1F);
 		var kind = ParticleKind.byNameOr(particleKindName, ParticleKind.SPARKLE).options;
@@ -1488,11 +1370,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/**
-	 * A big pulsing sphere of particles centered on your body - many latitude rings, densely enough
-	 * populated to actually read as a real sphere surface rather than a few sparse hoops, whose
-	 * overall radius breathes in and out on a smooth cycle like a slow heartbeat.
-	 */
+	/** A pulsing sphere of particles centered on the body, dense latitude rings, radius breathing like a heartbeat. */
 	private static void renderPulsingSphere(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float raw = phase(client, player, 0.08F);
 		float pulse = (1F - (float) Math.cos(raw)) * 0.5F; // smooth 0..1..0
@@ -1515,10 +1393,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/**
-	 * A full ring of particles that sweeps up and down your whole body on a smooth cycle, like a
-	 * sci-fi body scanner.
-	 */
+	/** A ring of particles sweeping up and down the body on a smooth cycle, like a sci-fi scanner. */
 	private static void renderScanner(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float raw = phase(client, player, 0.06F);
 		float sweep = (1F - (float) Math.cos(raw)) * 0.5F; // smooth 0..1..0
@@ -1534,16 +1409,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/**
-	 * A real simulated cloth cape (see {@link CapeSimulator}) - unlike every other cosmetic here,
-	 * which trace a fixed procedural shape, this one is an actual Verlet cloth grid: it trails
-	 * opposite your own movement like real wind drag, only mildly buoyant while submerged in water
-	 * (not weightless), rests on the ground instead of clipping through it, and can't clip through
-	 * your own body either. Wider toward the hem and longer than you are tall, so it naturally
-	 * drapes/pools at your feet when you're standing still. Midpoints between adjacent simulation
-	 * nodes get an extra particle too, so the surface reads as an actual filled sheet of cloth
-	 * instead of a sparse grid of dots.
-	 */
+	/** A real Verlet cloth simulation (see {@link CapeSimulator}), unlike every other fixed-procedural cosmetic here. */
 	private static void renderPhysicsCape(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		Vec3[][] nodes = CapeSimulator.tick(client, player);
 		var particle = colorOrParticle(particleKindName, rgb, 1.1F);
@@ -1565,16 +1431,7 @@ public final class CosmeticsRenderer {
 		}
 	}
 
-	/**
-	 * A simpler cape with no simulation at all - a fixed trapezoid silhouette (narrow at the
-	 * shoulders, wide at the hem, longer than you are tall), the same "canned" animation style as
-	 * every other cosmetic here, as opposed to {@link #renderPhysicsCape}'s real per-tick cloth
-	 * simulation. The billow itself is deliberately NOT one clean sine wave - real fabric never
-	 * ripples at a single frequency, so this layers a faster, tighter wave on top of a slower,
-	 * broader one (each with its own speed and a phase that varies across the width, not just down
-	 * the length), plus a separate front-back "puff" wave out of phase with the sideways sway, so the
-	 * whole sheet billows in and out rather than only swinging side to side.
-	 */
+	/** A fixed trapezoid cape silhouette, unlike {@link #renderPhysicsCape}'s real simulation - layers two sine waves so the billow doesn't read as one mechanical ripple. */
 	private static void renderCloak(Minecraft client, AbstractClientPlayer player, int rgb, String particleKindName) {
 		float wave1 = phase(client, player, 0.11F);
 		float wave2 = phase(client, player, 0.19F);
@@ -1598,9 +1455,7 @@ public final class CosmeticsRenderer {
 			double puff = Math.sin(puffWave * 1.5F + t * 3F) * 0.16 * t;
 			for (int c = 0; c < cols; c++) {
 				double u = (double) c / (cols - 1) - 0.5; // -0.5..0.5 across the width
-				// Two overlapping traveling waves at different speeds/frequencies, each phase-shifted
-				// across the width (the "- u" / "+ u" terms) so the ripple visibly travels sideways
-				// too, not just down the length - a single sine here read as too mechanical/uniform.
+				// Two overlapping waves, phase-shifted across the width (the -u/+u terms), so the ripple travels sideways too.
 				double flutter = Math.sin(wave1 * 2F + t * 5F - u * 1.5) * 0.14 * t
 						+ Math.sin(wave2 * 3F + t * 8F + u * 2.5) * 0.06 * t;
 				double lateral = u * halfWidth * 2 + flutter;
