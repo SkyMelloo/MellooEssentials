@@ -18,16 +18,8 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/**
- * Centered per-cosmetic edit popup (same bordered-card style as SkyMelloo's StringInputScreen).
- * Every cosmetic gets an enabled toggle and a "hide my own particles" toggle. A cosmetic that's
- * color-capable ALSO gets a particle-kind cycle whose first entry is "Default (Color)" - picking it
- * shows the 16-standard-Minecraft-color grid below and renders as colored dust; picking any named
- * kind (Heart, Note, Flame, ...) hides the color grid, since a named vanilla particle has its own
- * fixed, non-recolorable look - the two are mutually exclusive at the game-particle-system level,
- * not an arbitrary limitation here. A cosmetic that was never color-capable to begin with (no
- * colorGetter) just cycles the named kinds directly, with no "Default" entry.
- */
+// Centered per-cosmetic edit popup with enabled/hide-self toggles. Color-capable cosmetics also
+// get a particle-kind cycle; picking a named kind hides the color grid (mutually exclusive).
 public class CosmeticEditScreen extends Screen {
 	private static final int PANEL_WIDTH = 300;
 	private static final int BORDER_COLOR = 0xFF66DDFF;
@@ -53,14 +45,8 @@ public class CosmeticEditScreen extends Screen {
 		this(parent, label, effectKey, enabledGetter, enabledSetter, colorGetter, colorSetter, particleGetter, particleSetter, colorGetter != null);
 	}
 
-	/**
-	 * @param particleHasDefault whether the particle cycle should include a "Default" entry (null)
-	 *                           representing this cosmetic's own original look - always true when
-	 *                           {@code colorGetter} is non-null (Default = colored dust), but also
-	 *                           true for a few particle-only cosmetics whose default is a special
-	 *                           fixed combo (Rain Cloud's cloud+rain, Campfire Smoke's smoke mix,
-	 *                           Confetti Burst's rainbow) rather than a single named kind.
-	 */
+	// particleHasDefault: whether the cycle includes a "Default" entry (null) - always true when
+	// colorGetter is non-null, but also true for a few particle-only cosmetics with a fixed default combo.
 	public CosmeticEditScreen(SettingsScreen parent, String label, String effectKey, BooleanSupplier enabledGetter, Consumer<Boolean> enabledSetter,
 			Supplier<Color> colorGetter, Consumer<Color> colorSetter, Supplier<String> particleGetter, Consumer<String> particleSetter, boolean particleHasDefault) {
 		super(Component.literal(label));
@@ -76,7 +62,6 @@ public class CosmeticEditScreen extends Screen {
 		this.particleHasDefault = particleHasDefault;
 	}
 
-	/** Whether the color grid should currently be showing - only for color-capable cosmetics still on "Default (Color)". */
 	private boolean showColorGrid() {
 		return colorGetter != null && particleGetter.get() == null;
 	}
@@ -133,7 +118,7 @@ public class CosmeticEditScreen extends Screen {
 		}));
 	}
 
-	/** Reopens a fresh copy of this same screen - the simplest way to reflow the layout when picking a particle kind changes whether the color grid should show. */
+	// Reopens a fresh copy of this screen to reflow the layout when the color grid appears/disappears.
 	private void reopenSelf() {
 		Minecraft.getInstance().setScreen(new CosmeticEditScreen(parent, label, effectKey, enabledGetter, enabledSetter, colorGetter, colorSetter, particleGetter, particleSetter, particleHasDefault));
 	}
@@ -150,7 +135,6 @@ public class CosmeticEditScreen extends Screen {
 		parent.refreshAfterChildClosed();
 	}
 
-	/** See SettingsScreen's own override of this - the vanilla default applies a blur+dark background regardless of anything drawn in extractRenderState. */
 	@Override
 	public void extractBackground(GuiGraphicsExtractor gg, int mouseX, int mouseY, float partialTick) {
 	}
@@ -191,7 +175,7 @@ public class CosmeticEditScreen extends Screen {
 		}
 	}
 
-	/** Still reported to other players (they keep seeing it via presence sync) - only suppresses the local self-render call, see EssentialsConfig#isSelfHidden. */
+	// Still reported to other players - only suppresses the local self-render call.
 	private final class HideSelfRowWidget extends AbstractWidget {
 		HideSelfRowWidget(int x, int y, int w, int h) {
 			super(x, y, w, h, Lang.c("mellooessentials.gui.cosmetic_edit.hide_own_particles"));
@@ -245,11 +229,7 @@ public class CosmeticEditScreen extends Screen {
 		}
 	}
 
-	/**
-	 * Cycles through particle kinds. When {@code hasDefault} is true (this cosmetic is also color-
-	 * capable), a null-backed "Default (Color)" entry is prepended to the cycle and picking anything
-	 * else reopens the screen so the color grid can appear/disappear.
-	 */
+	// Cycles through particle kinds; when hasDefault a null-backed "Default (Color)" entry leads.
 	private final class ParticleCycleWidget extends AbstractWidget {
 		private final boolean hasDefault;
 		private final List<String> options = new ArrayList<>();
@@ -294,8 +274,6 @@ public class CosmeticEditScreen extends Screen {
 			String next = options.get((index + 1) % options.size());
 			particleSetter.accept(next);
 			if (hasDefault) {
-				// Color grid visibility just changed - reflow the whole popup rather than trying to
-				// patch widgets in place.
 				reopenSelf();
 			}
 		}
