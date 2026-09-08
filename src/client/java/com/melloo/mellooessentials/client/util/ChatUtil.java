@@ -7,7 +7,8 @@ import net.minecraft.network.chat.TextColor;
 
 import java.util.regex.Pattern;
 
-/** Consistent chat message formatting for all MellooEssentials output - mirrors SkyMelloo's own ChatUtil, light-blue brand gradient instead of SkyMelloo's pink (matching the mod-user marker/website's own light-blue vs. pink distinction between the two mods). */
+// Consistent chat message formatting for all MellooEssentials output, light-blue gradient
+// (SkyMelloo's own ChatUtil uses pink), matching the mod-user marker distinction between the two.
 public final class ChatUtil {
 	private static final int GRADIENT_START = 0x66DDFF;
 	private static final int GRADIENT_END = 0x3FA9D9;
@@ -20,16 +21,12 @@ public final class ChatUtil {
 		return prefixed(Component.literal(message));
 	}
 
-	/**
-	 * Strips §-color codes and prepends a plain "[MellooEssentials] " prefix - for text sent through
-	 * {@code /pc} as a command string, which doesn't survive § codes intact (see SkyMelloo's own
-	 * ChatUtil#partyPrefixed for the confirmed root cause).
-	 */
+	// Strips §-color codes and uses a plain "[MellooEssentials] " prefix, for text sent through /pc
+	// as a command string, which doesn't survive § codes intact.
 	public static String partyPrefixed(String message) {
 		return "[MellooEssentials] " + FORMAT_CODE.matcher(message).replaceAll("");
 	}
 
-	/** Like {@link #prefixed(String)}, but for a message that needs rich formatting (click/hover events, mixed colors) rather than a plain string. */
 	public static MutableComponent prefixed(Component message) {
 		MutableComponent result = Component.literal("§b[").append(gradientText("MellooEssentials")).append(Component.literal("§b]§r "));
 		result.append(message);
@@ -47,12 +44,8 @@ public final class ChatUtil {
 		return result;
 	}
 
-	/**
-	 * Public entry point for call sites that build their own chat line but still need
-	 * CompletionException-unwrapping - without it, a failed command chain shows
-	 * "java.lang.RuntimeException: <message>" instead of just "<message>", since
-	 * CompletionException(cause)'s own getMessage() is cause.toString().
-	 */
+	// Unwraps CompletionException/ExecutionException to the real cause, since its own getMessage()
+	// is just cause.toString().
 	public static String friendlyError(Throwable error) {
 		Throwable cause = error;
 		while (cause.getCause() != null && cause.getCause() != cause) {
