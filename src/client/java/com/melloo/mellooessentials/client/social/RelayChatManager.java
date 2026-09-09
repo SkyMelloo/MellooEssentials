@@ -91,7 +91,8 @@ public final class RelayChatManager {
 						return;
 					}
 					if (error != null || !Boolean.TRUE.equals(ok)) {
-						client.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.dm.send_failed")));
+						String reason = error != null ? ChatUtil.friendlyError(error) : "unknown error";
+						client.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.dm.send_failed", reason)));
 						return;
 					}
 					client.player.sendSystemMessage(ChatUtil.prefixed("§d[DM → " + toUsername + "] §7: §f" + text));
@@ -117,7 +118,8 @@ public final class RelayChatManager {
 						return;
 					}
 					if (error != null || !Boolean.TRUE.equals(ok)) {
-						client.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.party.send_failed")));
+						String reason = error != null ? ChatUtil.friendlyError(error) : "unknown error";
+						client.player.sendSystemMessage(ChatUtil.prefixed(Lang.c("mellooessentials.chat.party.send_failed", reason)));
 						return;
 					}
 					client.player.sendSystemMessage(ChatUtil.prefixed("§d[Party] §b" + selfName + "§7: §f" + text));

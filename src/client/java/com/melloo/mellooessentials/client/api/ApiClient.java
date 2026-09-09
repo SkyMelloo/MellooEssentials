@@ -307,13 +307,13 @@ public final class ApiClient {
 	}
 
 	// The server rejects this (403) unless the two accounts are already confirmed friends.
+	// Errors propagate uncaught so callers can show the server's actual message (e.g. a ban).
 	public static CompletableFuture<Boolean> sendRelayMessage(String toUsername, String text, ModAuthManager.ModIdentity identity) {
 		JsonObject body = new JsonObject();
 		body.addProperty("toUsername", toUsername);
 		body.addProperty("text", text);
 		return postJson("/relay/message", body, identity)
-				.thenApply(root -> true)
-				.exceptionally(error -> false);
+				.thenApply(root -> true);
 	}
 
 	// The server has no visibility into real Hypixel parties - trusts whichever roster the mod resolved.
@@ -326,8 +326,7 @@ public final class ApiClient {
 		body.add("toUuids", uuidsArr);
 		body.addProperty("text", text);
 		return postJson("/relay/party", body, identity)
-				.thenApply(root -> true)
-				.exceptionally(error -> false);
+				.thenApply(root -> true);
 	}
 
 	// scope is "dm" or "party".

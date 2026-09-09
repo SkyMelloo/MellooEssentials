@@ -4,6 +4,10 @@ Internal dev version history - every entry below used to live as a giant stacked
 
 > Versioning scheme, same discipline and starting point as skymelloo (kept as a fully separate counter - this mod's mod_version has nothing to do with skymelloo's own numbers): mod_version below is the INTERNAL/dev version, bumped on every single change so every build has a unique, distinguishable identity - without this, "is the jar I installed actually the latest build" is impossible to answer just by looking at it, which is exactly the confusion that prompted adding this scheme. PATCH (3rd number) for small changes, MINOR (2nd number, patch reset to 0) for bigger features, MAJOR only on explicit instruction. public_version is a separate, hand-maintained user-facing release number, only bumped when a build is actually promoted to public via the sky.melloo.me admin panel.
 
+## 0.14.1 (from 0.14.0) · patch
+
+DM/party relay-message failures now show the server's actual error (e.g. a ban notice) instead of a generic "couldn't send" message - `ApiClient.sendRelayMessage`/`sendRelayPartyMessage` no longer swallow the failure into a bare `false`.
+
 ## 0.14.0 (from 0.13.3) · minor
 
 A build can now target a different deployment than production, matching SkyMelloo's own change. `site_url` in gradle.properties is the committed default and must stay `https://sky.melloo.me` - a build fails outright if it doesn't, since that file decides where everyone else's download points. Aim a build elsewhere with `-PsiteUrl=...` or `siteUrl` in `~/.gradle/gradle.properties`, neither of which is in the repo.

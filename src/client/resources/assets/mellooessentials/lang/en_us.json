@@ -92,9 +92,9 @@
 
 	"mellooessentials.tooltip.chat.reply": "Click to reply",
 	"mellooessentials.chat.dm.not_friend": "§cNot a friend yet - §f/mes friend %s §cfirst.",
-	"mellooessentials.chat.dm.send_failed": "§cCouldn't send - they may not be online right now.",
+	"mellooessentials.chat.dm.send_failed": "§cCouldn't send: %s",
 	"mellooessentials.chat.party.nobody_running_mod": "§7Nobody else in your party is running this mod right now.",
-	"mellooessentials.chat.party.send_failed": "§cCouldn't send to party.",
+	"mellooessentials.chat.party.send_failed": "§cCouldn't send to party: %s",
 	"mellooessentials.command.chat.usage": "§cUsage: §f/mes chat party <message>§7 or §f/mes chat <name> <message>",
 
 	"mellooessentials.chat.party_games.roll_member_result": "§dRandomly picked: §e%s§d!",
