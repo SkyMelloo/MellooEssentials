@@ -43,18 +43,25 @@ public final class CloudSyncManager {
 					}
 					return reconcile(identity);
 				})
-		).exceptionally(error -> null);
+		).exceptionally(error -> {
+			// Identity/permissions fetch failed (reconcile() handles its own fetch failures below
+			// without throwing) - let the next join/server-hop retry instead of giving up for good.
+			syncAttempted = false;
+			return null;
+		});
 	}
 
 	// If nothing's been pushed yet, bootstraps the cloud from this device's current settings instead.
+	// Never treats a failed fetch as "nothing saved" - doing so would silently overwrite real cloud
+	// data with whatever's on this device the moment a request has a transient hiccup.
 	private static CompletableFuture<Void> reconcile(ModAuthManager.ModIdentity identity) {
 		return ApiClient.fetchCloudSettings(identity).thenAccept(result ->
 				Minecraft.getInstance().execute(() -> {
-					if (result == null) {
-						pushWithIdentity(identity);
-						return;
+					switch (result) {
+						case ApiClient.CloudFetchResult.Empty ignored -> pushWithIdentity(identity);
+						case ApiClient.CloudFetchResult.Found found -> applySettings(found.settings());
+						case ApiClient.CloudFetchResult.Error ignored -> syncAttempted = false;
 					}
-					applySettings(result.settings());
 				})
 		);
 	}
@@ -65,8 +72,8 @@ public final class CloudSyncManager {
 		}
 		ModAuthManager.getIdentity(client).thenCompose(ApiClient::fetchCloudSettings).whenComplete((result, error) ->
 				Minecraft.getInstance().execute(() -> {
-					if (result != null) {
-						applySettings(result.settings());
+					if (error == null && result instanceof ApiClient.CloudFetchResult.Found found) {
+						applySettings(found.settings());
 						onApplied.run();
 					}
 				})

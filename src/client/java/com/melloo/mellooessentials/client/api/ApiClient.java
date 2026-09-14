@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 // Thin client for sky.melloo.me's mod-auth + presence routes. The ephemeral-keypair handshake
 // (ModAuthManager) proves a live Mojang session for any mod.
@@ -30,26 +31,34 @@ public final class ApiClient {
 	private ApiClient() {
 	}
 
-	private static CompletableFuture<JsonObject> getJson(String path, ModAuthManager.ModIdentity identity) {
-		HttpRequest.Builder builder = HttpRequest.newBuilder()
-				.uri(URI.create(BASE_URL + path))
-				.timeout(Duration.ofSeconds(8))
-				.header("X-MellooEssentials-Client", "mod")
-				.GET();
-		if (identity != null) {
-			attachSignature(builder, identity, "GET", requestPath(path), new byte[0]);
+	private static JsonObject parseJsonResponse(HttpResponse<String> response) {
+		if (response.statusCode() != 200) {
+			throw new RuntimeException(extractErrorMessage(response.body(), response.statusCode()));
 		}
-		return sendWithRetry(builder.build())
-				.thenApply(response -> {
-					if (response.statusCode() != 200) {
-						throw new RuntimeException(extractErrorMessage(response.body(), response.statusCode()));
-					}
-					JsonElement parsed = JsonParser.parseString(response.body());
-					if (!parsed.isJsonObject()) {
-						throw new RuntimeException("No data found");
-					}
-					return parsed.getAsJsonObject();
-				});
+		JsonElement parsed = JsonParser.parseString(response.body());
+		if (!parsed.isJsonObject()) {
+			throw new RuntimeException("No data found");
+		}
+		return parsed.getAsJsonObject();
+	}
+
+	// GET is naturally safe to repeat, so it gets one retry on a plain timeout - rebuilding a fresh
+	// signed request each attempt (a fresh timestamp+nonce+signature), not resending the same one.
+	// Reusing the original would get rejected as a nonce replay if it actually reached the server
+	// and the response was just lost - turning a successful call into a reported failure.
+	private static CompletableFuture<JsonObject> getJson(String path, ModAuthManager.ModIdentity identity) {
+		Supplier<HttpRequest> requestSupplier = () -> {
+			HttpRequest.Builder builder = HttpRequest.newBuilder()
+					.uri(URI.create(BASE_URL + path))
+					.timeout(Duration.ofSeconds(8))
+					.header("X-MellooEssentials-Client", "mod")
+					.GET();
+			if (identity != null) {
+				attachSignature(builder, identity, "GET", requestPath(path), new byte[0]);
+			}
+			return builder.build();
+		};
+		return sendWithRetry(requestSupplier).thenApply(ApiClient::parseJsonResponse);
 	}
 
 	private static CompletableFuture<JsonObject> postJson(String path, JsonObject body, ModAuthManager.ModIdentity identity) {
@@ -57,6 +66,11 @@ public final class ApiClient {
 	}
 
 	// clientHeaderName lets the presence report identify itself as SkyMelloo when installed - see reportPresence.
+	// Never auto-retried, unlike getJson - if the original request actually mutated server state and
+	// only the response was lost, retrying (with the same signature or a fresh one) would either get
+	// rejected as a nonce replay or silently repeat the mutation, which isn't safe for every endpoint
+	// here (e.g. sending a relay chat message or a friend request twice). A real fix needs an
+	// idempotency-key on the server; until then, a lost response is reported as a failure, not guessed at.
 	private static CompletableFuture<JsonObject> postJson(String path, JsonObject body, ModAuthManager.ModIdentity identity, String clientHeaderName) {
 		byte[] bodyBytes = body.toString().getBytes(StandardCharsets.UTF_8);
 		HttpRequest.Builder builder = HttpRequest.newBuilder()
@@ -68,22 +82,11 @@ public final class ApiClient {
 		if (identity != null) {
 			attachSignature(builder, identity, "POST", requestPath(path), bodyBytes);
 		}
-		return sendWithRetry(builder.build())
-				.thenApply(response -> {
-					if (response.statusCode() != 200) {
-						throw new RuntimeException(extractErrorMessage(response.body(), response.statusCode()));
-					}
-					JsonElement parsed = JsonParser.parseString(response.body());
-					if (!parsed.isJsonObject()) {
-						throw new RuntimeException("No data found");
-					}
-					return parsed.getAsJsonObject();
-				});
+		return HTTP.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofString()).thenApply(ApiClient::parseJsonResponse);
 	}
 
-	// A single one-second retry on a plain timeout - see SkyMelloo's SkyMellooApiClient.
-	private static CompletableFuture<HttpResponse<String>> sendWithRetry(HttpRequest request) {
-		return HTTP.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+	private static CompletableFuture<HttpResponse<String>> sendWithRetry(Supplier<HttpRequest> requestSupplier) {
+		return HTTP.sendAsync(requestSupplier.get(), HttpResponse.BodyHandlers.ofString())
 				.handle((response, error) -> {
 					if (error == null || !isTimeout(error)) {
 						if (error != null) {
@@ -95,7 +98,7 @@ public final class ApiClient {
 					}
 					return CompletableFuture
 							.supplyAsync(() -> null, CompletableFuture.delayedExecutor(1, TimeUnit.SECONDS))
-							.thenCompose(ignored -> HTTP.sendAsync(request, HttpResponse.BodyHandlers.ofString()));
+							.thenCompose(ignored -> HTTP.sendAsync(requestSupplier.get(), HttpResponse.BodyHandlers.ofString()));
 				})
 				.thenCompose(future -> future);
 	}
@@ -366,16 +369,26 @@ public final class ApiClient {
 		});
 	}
 
-	public record CloudSettingsResult(JsonObject settings) {
+	// Distinguishes "the account genuinely has no cloud settings yet" from "the request failed" -
+	// callers must only ever bootstrap the cloud (push local settings) on Empty, never on Error,
+	// or a transient failure silently overwrites real cloud data with whatever's on this device.
+	public sealed interface CloudFetchResult {
+		record Found(JsonObject settings) implements CloudFetchResult {
+		}
+
+		record Empty() implements CloudFetchResult {
+		}
+
+		record Error(Throwable cause) implements CloudFetchResult {
+		}
 	}
 
-	// null if nothing's been saved yet, or the request failed.
-	public static CompletableFuture<CloudSettingsResult> fetchCloudSettings(ModAuthManager.ModIdentity identity) {
+	public static CompletableFuture<CloudFetchResult> fetchCloudSettings(ModAuthManager.ModIdentity identity) {
 		return getJson("/settings", identity)
-				.thenApply(root -> root.has("settings") && root.get("settings").isJsonObject()
-						? new CloudSettingsResult(root.getAsJsonObject("settings"))
-						: null)
-				.exceptionally(error -> null);
+				.<CloudFetchResult>thenApply(root -> root.has("settings") && root.get("settings").isJsonObject()
+						? new CloudFetchResult.Found(root.getAsJsonObject("settings"))
+						: new CloudFetchResult.Empty())
+				.exceptionally(CloudFetchResult.Error::new);
 	}
 
 	// A failure here just means the next sync attempt tries again; returns success for debug logging.
@@ -434,6 +447,14 @@ public final class ApiClient {
 	}
 
 	// Same shape as SkyMelloo's own version-check result - see ModVersionManager.
+	//
+	// integrityOk only means "these compiled .class files under com/melloo/mellooessentials match a
+	// signed release" (see ModVersionManager#computeJarHash) - it does NOT mean "this whole JAR is
+	// the unmodified official build". fabric.mod.json, mixin configs, assets and language files (and
+	// SiteConfig's own siteUrl custom value, which decides which server this very check is sent to)
+	// are all outside that hash. A repackaged JAR with a doctored fabric.mod.json could point this
+	// check at a server the attacker controls and always get integrityOk=true back - don't treat a
+	// true value here as proof of anything beyond unmodified class bytecode.
 	public record VersionCheckResult(boolean compatible, String minVersion, String message, boolean upToDate, String updateAvailableMessage, boolean integrityOk, String buildKind, String latestVersion, String latestPublicVersion, String maintainerUsername) {
 	}
 

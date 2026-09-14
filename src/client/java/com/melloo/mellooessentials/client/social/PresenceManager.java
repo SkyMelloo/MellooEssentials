@@ -169,6 +169,7 @@ public final class PresenceManager {
 					Map<UUID, String> updatedRoles = new HashMap<>();
 					Map<UUID, String> updatedStatus = new HashMap<>();
 					Set<UUID> updatedIsSkyMelloo = new HashSet<>();
+					List<DungeonSyncUpdate> pendingDungeonSync = new ArrayList<>();
 					for (ApiClient.PresenceEntry entry : present) {
 						UUID uuid;
 						try {
@@ -210,20 +211,33 @@ public final class PresenceManager {
 							updatedStatus.put(uuid, entry.status());
 						}
 						if (entry.dungeonSync() != null) {
-							dungeonSyncListener.onDungeonSync(entry.uuid(), entry.username(), entry.dungeonSync());
+							pendingDungeonSync.add(new DungeonSyncUpdate(entry.uuid(), entry.username(), entry.dungeonSync()));
 						}
 					}
-					otherCosmetics.clear();
-					otherCosmetics.putAll(updatedCosmetics);
-					otherParticleKinds.clear();
-					otherParticleKinds.putAll(updatedParticleKinds);
-					otherRoles.clear();
-					otherRoles.putAll(updatedRoles);
-					otherIsSkyMelloo.clear();
-					otherIsSkyMelloo.addAll(updatedIsSkyMelloo);
-					otherStatusText.clear();
-					otherStatusText.putAll(updatedStatus);
+					// This callback runs on the HTTP client's own thread, not the Minecraft client
+					// thread - everything above only builds local values, but applying them touches
+					// shared state (these maps, and DungeonSyncManager's own state via the listener)
+					// that the render/client thread reads concurrently. Marshal the whole apply step
+					// over instead of mutating it from here directly.
+					Minecraft.getInstance().execute(() -> {
+						for (DungeonSyncUpdate update : pendingDungeonSync) {
+							dungeonSyncListener.onDungeonSync(update.uuid(), update.username(), update.payload());
+						}
+						otherCosmetics.clear();
+						otherCosmetics.putAll(updatedCosmetics);
+						otherParticleKinds.clear();
+						otherParticleKinds.putAll(updatedParticleKinds);
+						otherRoles.clear();
+						otherRoles.putAll(updatedRoles);
+						otherIsSkyMelloo.clear();
+						otherIsSkyMelloo.addAll(updatedIsSkyMelloo);
+						otherStatusText.clear();
+						otherStatusText.putAll(updatedStatus);
+					});
 				});
+	}
+
+	private record DungeonSyncUpdate(String uuid, String username, JsonObject payload) {
 	}
 
 	public static String getStatusText(UUID uuid) {
